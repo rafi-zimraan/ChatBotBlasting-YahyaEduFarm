@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jabatangan — Yahya Edu Farm</title>
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg">
+    <link rel="stylesheet" href="style.css">
+    <script src="/chart.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/logo.jpg" alt="Yahya Edu Farm" class="brand-logo">
+                <div class="brand-text">
+                    <span class="brand-name">Jabatangan</span>
+                    <span class="brand-sub">Blast Controller</span>
+                </div>
+            </div>
+            <div class="sidebar-profile" id="sidebarProfile">
+                <div class="profile-avatar">O</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="profileName">Owner</div>
+                    <div class="profile-email" id="profileEmail">owner@gmail.com</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="dashboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Dashboard
+                </button>
+                <button class="nav-item" data-page="groups">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Groups
+                </button>
+                <button class="nav-item" data-page="blast">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                    Blast
+                </button>
+                <button class="nav-item" data-page="schedule">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Jadwal
+                </button>
+                <button class="nav-item" data-page="faq">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>
+                    FAQ Bot
+                </button>
+                <button class="nav-item" data-page="donors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    Donatur
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="bot-status" id="botStatus">
+                    <span class="status-dot offline"></span>
+                    <span class="status-label">Memuat...</span>
+                </div>
+                <button class="sidebar-logout" onclick="logout()" title="Logout">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+                <div class="sidebar-credit">Built by GriyaIT Nusantara</div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="topbar-actions">
+                    <span class="connection-badge" id="connectionBadge">
+                        <span class="status-dot green"></span>
+                        Terhubung
+                    </span>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Ganti tema">
+                        <!-- Moon icon (tampil di dark mode) -->
+                        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <!-- Sun icon (tampil di light mode) -->
+                        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- DASHBOARD -->
+                <section class="page active" id="page-dashboard">
+                    <div class="dashboard-hero">
+                        <div class="hero-content">
+                            <h2 class="hero-title">Selamat Datang 👋</h2>
+                            <p class="hero-sub">Pantau aktivitas bot, kirim blast, kelola grup — semua real-time</p>
+                            <div class="hero-stats-mini">
+                                <span id="heroBotStatus">✅ Bot Aktif</span>
+                                <span id="heroGroupsCount">0 Grup</span>
+                                <span id="heroTodayCount">0 Pesan Hari Ini</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Periode Selector -->
+                    <div class="period-tabs" id="periodTabs">
+                        <button class="period-tab active" data-period="today" onclick="switchPeriod('today')">Hari Ini</button>
+                        <button class="period-tab" data-period="week" onclick="switchPeriod('week')">Minggu Ini</button>
+                        <button class="period-tab" data-period="month" onclick="switchPeriod('month')">Bulan Ini</button>
+                        <button class="period-tab" data-period="year" onclick="switchPeriod('year')">Tahun Ini</button>
+                    </div>
+
+                    <!-- Hologram KPI Cards -->
+                    <div class="hologram-grid" id="hologramGrid">
+                        <div class="hologram-card hologram-green">
+                            <div class="holo-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            </div>
+                            <div class="holo-body">
+                                <span class="holo-value" id="holoMessages">0</span>
+                                <span class="holo-label">Total Pesan</span>
+                                <span class="holo-trend" id="trendMessages"><span class="trend-neutral">—</span></span>
+                            </div>
+                        </div>
+                        <div class="hologram-card hologram-purple">
+                            <div class="holo-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                            </div>
+                            <div class="holo-body">
+                                <span class="holo-value" id="holoBlasts">0</span>
+                                <span class="holo-label">Total Blast</span>
+                                <span class="holo-trend" id="trendBlasts"><span class="trend-neutral">—</span></span>
+                            </div>
+                        </div>
+                        <div class="hologram-card hologram-gold">
+                            <div class="holo-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                            <div class="holo-body">
+                                <span class="holo-value" id="holoDonation">Rp0</span>
+                                <span class="holo-label">Total Donasi</span>
+                                <span class="holo-trend" id="trendDonation"><span class="trend-neutral">—</span></span>
+                            </div>
+                        </div>
+                        <div class="hologram-card hologram-blue">
+                            <div class="holo-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                            </div>
+                            <div class="holo-body">
+                                <span class="holo-value" id="holoDonors">0</span>
+                                <span class="holo-label">Donatur Aktif</span>
+                                <span class="holo-trend" id="trendDonors"><span class="trend-neutral">—</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional stat bar -->
+                    <div class="micro-bar">
+                        <span>🤖 Bot: <strong id="microBotStatus">Aktif</strong></span>
+                        <span>👥 Grup: <strong id="microGroups">0</strong></span>
+                        <span>⏰ Jadwal: <strong id="microSchedules">0</strong></span>
+                        <span>📊 Menu: <strong id="microMenu">Aktif</strong></span>
+                    </div>
+
+                    <!-- Dual Chart + Donors -->
+                    <div class="dashboard-two-col">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Aktivitas 7 Hari</h3>
+                                <div class="chart-legend">
+                                    <span class="legend-dot" style="background:var(--green)"></span> DM
+                                    <span class="legend-dot" style="background:var(--purple)"></span> FAQ Grup
+                                    <span class="legend-dot" style="background:var(--orange)"></span> Blast
+                                </div>
+                            </div>
+                            <canvas id="activityChart" height="90"></canvas>
+                        </div>
+                        <div class="top-donor-card" id="topDonorCard">
+                            <div class="top-donor-header">
+                                <div class="td-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="td-label">Donasi Tertinggi</div>
+                                    <div class="td-date" id="topDonorDate">—</div>
+                                </div>
+                                <div class="td-amount" id="topDonorAmount">Rp0</div>
+                            </div>
+                            <div class="td-body">
+                                <div class="td-name" id="topDonorName">—</div>
+                                <div class="td-meta" id="topDonorMeta">—</div>
+                            </div>
+                            <div class="td-list" id="topDonorList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Quick actions + Info -->
+                    <div class="dashboard-two-col">
+                        <div class="quick-actions">
+                            <h3>Aksi Cepat</h3>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary" onclick="navigateTo('blast')">Kirim Blast</button>
+                                <button class="btn btn-secondary" onclick="navigateTo('schedule')">Atur Jadwal</button>
+                                <button class="btn btn-outline" onclick="navigateTo('donors')">Catat Donatur</button>
+                                <button class="btn btn-outline" onclick="toggleBot()" id="dashToggleBot">Matikan Bot</button>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <img src="/logo.jpg" alt="Yahya Edu Farm" class="info-logo">
+                                <div>
+                                    <h3>Yahya Edu Farm</h3>
+                                    <p class="info-sub">Agrowisata Edukasi Berbasis Masjid Ismuhu Yahya</p>
+                                </div>
+                            </div>
+                            <p style="font-size:13px">Bot WhatsApp resmi untuk melayani pertanyaan seputar produk, harga, jadwal wisata, dan program edukasi agrowisata.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- GROUPS -->
+                <section class="page" id="page-groups">
+                    <div class="page-header">
+                        <div class="search-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <input type="text" id="groupSearch" placeholder="Cari grup..." oninput="filterGroups()">
+                        </div>
+                        <button class="btn btn-secondary" onclick="refreshGroups()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllGroups" onchange="toggleSelectAll()"></th>
+                                    <th>Nama Grup</th>
+                                    <th>Anggota</th>
+                                    <th>ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="groupsTableBody">
+                                <tr><td colspan="4" class="empty-state">Memuat data grup...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="selection-bar" id="selectionBar">
+                        <span id="selectedCount">0</span> grup dipilih
+                        <button class="btn btn-primary btn-sm" onclick="blastSelected()">Blast ke yang dipilih</button>
+                    </div>
+                </section>
+
+                <!-- BLAST -->
+                <section class="page" id="page-blast">
+                    <div class="blast-composer">
+                        <div class="composer-header">
+                            <h3>Compose Pesan</h3>
+                        </div>
+                        <div class="target-selector">
+                            <label class="radio-group">
+                                <input type="radio" name="blastTarget" value="all" checked onchange="toggleBlastTarget()">
+                                <span>Semua Grup</span>
+                            </label>
+                            <label class="radio-group">
+                                <input type="radio" name="blastTarget" value="selected" onchange="toggleBlastTarget()">
+                                <span>Grup Tertentu</span>
+                            </label>
+                        </div>
+                        <div class="selected-groups-info" id="selectedGroupsInfo" style="display:none">
+                            <span id="blastSelectedCount">0 grup dipilih</span>
+                            <button class="btn btn-link" onclick="navigateTo('groups')">Pilih Grup</button>
+                        </div>
+                        <textarea id="blastMessage" placeholder="Tulis pesan yang ingin dikirim ke grup..." rows="6"></textarea>
+                        <div class="char-counter"><span id="charCount">0</span> karakter</div>
+                        <div class="blast-media-upload">
+                            <label class="blast-media-label" id="blastMediaLabel">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                <span id="blastMediaText">Lampirkan gambar/PDF/video</span>
+                                <input type="file" id="blastMediaInput" accept="image/*,video/*,application/pdf" onchange="onBlastMediaSelect(this)" hidden>
+                            </label>
+                            <div class="blast-media-preview" id="blastMediaPreview" style="display:none">
+                                <span id="blastMediaName"></span>
+                                <button class="btn-danger-sm" onclick="removeBlastMedia()">Hapus</button>
+                            </div>
+                        </div>
+                        <div class="composer-actions">
+                            <button class="btn btn-primary btn-lg" onclick="executeBlast()" id="sendBlastBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                Kirim Blast
+                            </button>
+                        </div>
+                    </div>
+                    <div class="progress-container" id="blastProgress" style="display:none">
+                        <div class="progress-header">
+                            <span>Mengirim blast...</span>
+                            <span id="progressText">0 / 0</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-detail" id="progressDetail"></div>
+                    </div>
+                    <div class="blast-history">
+                        <h3>Riwayat Blast</h3>
+                        <div id="blastHistory">
+                            <div class="empty-state">Belum ada riwayat blast.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SCHEDULE -->
+                <section class="page" id="page-schedule">
+                    <div class="schedule-form">
+                        <h3>Tambah Jadwal Baru</h3>
+                        <div class="form-group">
+                            <label>Waktu (setiap hari)</label>
+                            <input type="time" id="scheduleTime" value="08:00">
+                        </div>
+                        <div class="form-group">
+                            <label>Pesan Blast</label>
+                            <textarea id="scheduleMessage" placeholder="Tulis pesan untuk dikirim terjadwal..." rows="4"></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="addSchedule()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Tambah Jadwal
+                        </button>
+                    </div>
+                    <div class="schedule-list">
+                        <h3>Daftar Jadwal</h3>
+                        <div id="scheduleList">
+                            <div class="empty-state">Belum ada jadwal. Buat jadwal baru di atas.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section class="page" id="page-faq">
+                    <div class="faq-tabs">
+                        <button class="faq-tab active" onclick="switchFaqTab('dm', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            FAQ Private (DM)
+                        </button>
+                        <button class="faq-tab" onclick="switchFaqTab('blast', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            FAQ Grup (Blasting)
+                        </button>
+                    </div>
+                    <div id="faq-panel-dm">
+                        <div class="schedule-form">
+                            <h3>FAQ Private — Pesan DM</h3>
+                            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Untuk pesan <strong>langsung (DM)</strong> ke nomor bot. Jika pesan mengandung kata kunci, bot membalas otomatis tanpa AI.</p>
+                            <div class="form-group">
+                                <label>Kata Kunci</label>
+                                <input type="text" id="faqKeyword" placeholder="Contoh: harga bibit, lokasi, jam buka" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Jawaban Otomatis</label>
+                                <textarea id="faqAnswer" placeholder="Tulis jawaban yang akan dikirim bot..." rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Gambar/Video (opsional)</label>
+                                <input type="file" id="faqMediaInput" accept="image/*,video/*" class="faq-input">
+                            </div>
+                            <button class="btn btn-primary" onclick="addFaq()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Tambah FAQ DM
+                            </button>
+                        </div>
+                        <div class="schedule-list">
+                            <h3>Daftar FAQ DM</h3>
+                            <div id="faqList"><div class="empty-state">Belum ada FAQ DM.</div></div>
+                        </div>
+                    </div>
+                    <div id="faq-panel-blast" style="display:none">
+                        <div class="schedule-form">
+                            <h3>FAQ Grup — Blasting</h3>
+                            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Untuk pesan di <strong>grup WhatsApp</strong>. Bot membalas tanpa perlu di-<em>@mention</em>.</p>
+                            <div class="faq-blast-notice">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Bot memantau semua pesan di grup dan membalas jika kata kunci terdeteksi — tanpa perlu di-tag.
+                            </div>
+                            <div class="form-group">
+                                <label>Kata Kunci</label>
+                                <input type="text" id="faqBlastKeyword" placeholder="Contoh: harga, dimana, cara pesan, daftar" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Jawaban Otomatis</label>
+                                <textarea id="faqBlastAnswer" placeholder="Tulis jawaban yang akan dikirim bot di grup..." rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Gambar/Video (opsional)</label>
+                                <input type="file" id="faqBlastMediaInput" accept="image/*,video/*" class="faq-input">
+                            </div>
+                            <button class="btn btn-primary" onclick="addFaqBlast()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Tambah FAQ Grup
+                            </button>
+                        </div>
+                        <div class="schedule-list">
+                            <h3>Daftar FAQ Grup</h3>
+                            <div id="faqBlastList"><div class="empty-state">Belum ada FAQ Grup.</div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DONORS -->
+                <section class="page" id="page-donors">
+                    <div class="donor-summary" id="donorSummary"></div>
+                    <div class="schedule-form">
+                        <h3>Catat Donatur / Pelanggan Tetap</h3>
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Simpan data pelanggan yang telah melakukan pembayaran untuk membangun database donatur tetap.</p>
+                        <div class="donor-form-grid">
+                            <div class="form-group">
+                                <label>Nama Lengkap</label>
+                                <input type="text" id="donorName" placeholder="Nama donatur / pelanggan" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Nomor WhatsApp</label>
+                                <input type="text" id="donorPhone" placeholder="628XXXXXXXXXX" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Nominal (Rp)</label>
+                                <input type="number" id="donorAmount" placeholder="500000" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal</label>
+                                <input type="date" id="donorDate" class="faq-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Kategori</label>
+                                <select id="donorCategory" class="faq-input">
+                                    <option value="donasi">Donasi</option>
+                                    <option value="pembelian">Pembelian Produk</option>
+                                    <option value="wisata">Paket Wisata</option>
+                                    <option value="pelatihan">Pelatihan / Workshop</option>
+                                    <option value="gathering">Gathering / Event</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Catatan</label>
+                                <input type="text" id="donorNotes" placeholder="Catatan tambahan (opsional)" class="faq-input">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addDonor()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Simpan Donatur
+                        </button>
+                    </div>
+                    <div class="donor-list-section">
+                        <div class="donor-list-header">
+                            <h3>Daftar Donatur</h3>
+                            <div class="donor-filter" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                                <label>Filter Tahun:</label>
+                                <select id="donorYearFilter" onchange="filterDonors()">
+                                    <option value="all">Semua</option>
+                                </select>
+                                <button class="btn btn-secondary btn-sm" onclick="exportDonorPDF()" title="Export PDF">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    PDF
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportDonorXLSX()" title="Export Excel">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="10" y1="17" x2="14" y2="17"/></svg>
+                                    Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama</th>
+                                        <th>WhatsApp</th>
+                                        <th>Kategori</th>
+                                        <th>Nominal</th>
+                                        <th>Tanggal</th>
+                                        <th>Catatan</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="donorTableBody">
+                                    <tr><td colspan="7" class="empty-state">Belum ada data donatur.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

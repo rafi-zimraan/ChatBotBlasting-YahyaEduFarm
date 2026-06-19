@@ -1,0 +1,32 @@
+{
+  "name": "whatsapp-ai-bot",
+  "version": "2.0.0",
+  "description": "GriyaIT Nusantara — WhatsApp Bot untuk YahyaEduFarm & Masjid Ismuhu Yahya",
+  "main": "src/js/index.js",
+  "scripts": {
+    "start": "node src/js/index.js",
+    "dev": "node --watch src/js/index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "ai",
+    "groq",
+    "griyait",
+    "yahyaedufarm"
+  ],
+  "author": "GriyaIT Nusantara",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "groq-sdk": "^1.0.0",
+    "helmet": "^8.2.0",
+    "pdfkit": "^0.19.1",
+    "qrcode-terminal": "^0.12.0",
+    "socket.io": "^4.8.3",
+    "whatsapp-web.js": "^1.34.0"
+  }
+}

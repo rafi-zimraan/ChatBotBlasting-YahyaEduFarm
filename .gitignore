@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+
+# WhatsApp session
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Logs
+*.log
+stderr.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# QR Code
+qr.png
+
+# Runtime data (donors, analytics, chat history, media files)
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Old root entry (moved to src/js/)
+/index.js
