@@ -170,12 +170,19 @@ const handleMenu = (text) => {
     }
     if (text === '7') {
         return '🎉 *Promo & Diskon*\n\n' +
+            '📌 *Program Diskon (Segera Hadir)*\n' +
+            'Kami sedang menyiapkan promo spesial:\n' +
+            '1️⃣ Beli min. 10 bibit kecil — diskon\n' +
+            '2️⃣ Beli min. 5 bibit besar — diskon\n' +
+            '3️⃣ Beli min. 3 produk berbeda — diskon\n' +
+            '   (Pupuk + Tanah + Bibit)\n' +
+            '4️⃣ Belanja di atas Rp500.000 — diskon spesial\n\n' +
+            '⏳ *Segera hadir — pantau terus infonya!*\n\n' +
+            '🎯 *Promo Aktif Saat Ini:*\n' +
             '• Majelis taklim — diskon 15%\n' +
             '• Pesantren — diskon 20%\n' +
             '• Pelajar & mahasiswa — diskon 10%\n' +
-            '• Bibit min. 50 pcs — diskon 10%\n' +
-            '• Grup min. 30 orang — harga spesial\n' +
-            '• Belanja > Rp200.000 — diskon tambahan\n\n' +
+            '• Grup min. 30 orang — harga spesial\n\n' +
             '👉 Balas *8* untuk hubungi admin';
     }
     if (text === '8') return null;
