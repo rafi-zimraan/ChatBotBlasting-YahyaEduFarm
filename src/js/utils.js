@@ -41,11 +41,14 @@ const isBusinessHours = () => {
 };
 
 const OUT_OF_HOURS_MSG =
-    'Terima kasih sudah menghubungi YahyaEduFarm 🙏\n\n' +
-    'Saat ini kami di luar jam layanan.\n' +
+    'Halo! Terima kasih sudah menghubungi YahyaEduFarm 🙏\n\n' +
+    'Saat ini kami sedang di luar jam layanan.\n' +
     '🕐 Jam operasional: Senin - Minggu, 08.00 - 17.00 WITA\n\n' +
-    'Pesan kamu akan kami balas di jam kerja ya.\n' +
-    'Atau hubungi langsung: WA 0852-4973-1265';
+    'Pesan kamu akan kami baca dan balas segera di jam kerja.\n' +
+    'Jika ada hal yang mendesak dan ingin langsung terhubung dengan admin,\n' +
+    'cukup balas pesan ini dengan kata **hubungi admin** atau kirim angka **8**,\n' +
+    'maka admin akan mendapatkan notifikasi dan segera merespon kamu 🙌\n\n' +
+    'Atau hubungi langsung via WA: 0852-4973-1265';
 
 const isMentioned = (message) => {
     if (!state.botOwnId) return false;

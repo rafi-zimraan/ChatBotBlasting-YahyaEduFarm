@@ -25,13 +25,27 @@ const processMessage = async (message, senderId, senderName, text) => {
         return;
     }
 
-    // Out-of-hours check (hanya sekali per hari per user)
+    // Out-of-hours check
     if (!utils.isBusinessHours()) {
         const today = new Date().toISOString().slice(0, 10);
-        if (state.outOfHoursNotified[senderId] !== today) {
+        const firstToday = state.outOfHoursNotified[senderId] !== today;
+
+        if (firstToday) {
             state.outOfHoursNotified[senderId] = today;
-            return message.reply(utils.OUT_OF_HOURS_MSG);
+            await message.reply(utils.OUT_OF_HOURS_MSG);
         }
+
+        // Tetap cek handover di luar jam kerja
+        const normalizedHour = utils.normalize(text || '');
+        if (state.botMenu && (normalizedHour === '8' || /^(hubungi\s*admin|admin|cs|mau\s*bicara\s*admin|ingin\s*hubungi\s*admin)$/i.test(normalizedHour))) {
+            const riwayat = (state.chatHistory[senderId] || [])
+                .filter((m) => m.role === 'user').slice(-3)
+                .map((m) => m.content).join(' | ');
+            const replyHandover = await handlers.handleHandover(senderId, senderName, riwayat);
+            return message.reply(replyHandover);
+        }
+
+        if (!firstToday) return;
         return;
     }
 
