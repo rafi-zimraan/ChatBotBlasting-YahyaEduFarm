@@ -115,6 +115,8 @@ const state = {
     botOwnId: null,
     io: null,
     batasiPesanPerHari: true,
+
+    newUsers: (saved && saved.newUsers) ? saved.newUsers : [],
 };
 
 state.saveData = () => {
@@ -124,6 +126,7 @@ state.saveData = () => {
         scheduledBlasts: state.scheduledBlasts,
         analytics: state.analytics,
         donors: state.donors,
+        newUsers: state.newUsers,
     });
 };
 

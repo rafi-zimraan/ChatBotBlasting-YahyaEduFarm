@@ -14,7 +14,22 @@ const trackAnalytics = (type) => {
     if (state.io) state.io.emit('analytics-update', state.analytics);
 };
 
+const trackNewUser = (senderId, senderName) => {
+    const alreadyExists = state.newUsers.some(u => u.id === senderId);
+    if (!alreadyExists) {
+        state.newUsers.unshift({
+            id: senderId,
+            name: senderName || 'Unknown',
+            time: new Date().toISOString(),
+        });
+        if (state.newUsers.length > 50) state.newUsers.length = 50;
+        state.saveData();
+        if (state.io) state.io.emit('new-users-update', state.newUsers);
+    }
+};
+
 const processMessage = async (message, senderId, senderName, text) => {
+    trackNewUser(senderId, senderName);
     if (utils.isSpam(senderId)) return;
 
     if (state.handoverUsers[senderId]) {

@@ -269,6 +269,7 @@ const sendFullState = (socket) => {
         faqsBlasting: state.customFAQBlasting,
         analytics: state.analytics,
         donors: safeDonors,
+        newUsers: state.newUsers,
     });
 };
 

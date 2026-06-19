@@ -1562,6 +1562,106 @@ body {
     color: var(--orange);
 }
 
+/* ============ NEW USERS CARD ============ */
+.new-users-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.new-users-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.new-users-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--blue);
+}
+
+.new-users-title-wrap h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.new-users-count {
+    background: rgba(83,189,235,0.12);
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 12px;
+}
+
+.new-users-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+
+.nu-item:hover {
+    background: var(--table-hover);
+}
+
+.nu-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.nu-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nu-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nu-phone {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.nu-time {
+    font-size: 11px;
+    color: var(--text-light);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 /* ============ DONORS ============ */
 .donor-form-grid {
     display: grid;

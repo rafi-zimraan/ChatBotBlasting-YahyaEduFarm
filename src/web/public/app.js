@@ -10,6 +10,7 @@ let botMenuActive = true;
 let blastHistoryList = [];
 let analyticsData = {};
 let donorsData = [];
+let newUsersData = [];
 let activityChart = null;
 let currentPeriod = 'today';
 
@@ -43,6 +44,7 @@ socket.on('state', (data) => {
     if (data.faqsBlasting) renderFaqsBlast(data.faqsBlasting);
     if (data.analytics) { analyticsData = data.analytics; setTimeout(renderChart, 50); }
     if (data.donors) { donorsData = data.donors; renderDonors(); renderDonorSummary(); renderTopDonor(); }
+    if (data.newUsers) { newUsersData = data.newUsers; renderNewUsers(); }
     if (data.user) renderProfile(data.user);
 
     updateStatus(data);
@@ -81,6 +83,11 @@ socket.on('donors-update', (data) => {
     renderTopDonor();
     renderHoloCards();
     renderStats({ donorsCount: data.length });
+});
+
+socket.on('new-users-update', (data) => {
+    newUsersData = data;
+    renderNewUsers();
 });
 
 socket.on('blast-progress', (data) => {
@@ -225,7 +232,7 @@ function navigateTo(page) {
     if (page === 'groups') renderGroups();
     if (page === 'schedule') socket.emit('request-schedules');
     if (page === 'faq') socket.emit('request-state');
-    if (page === 'dashboard') { setTimeout(() => { renderChart(); renderTodayStats(); renderTopDonor(); renderHoloCards(); }, 50); }
+    if (page === 'dashboard') { setTimeout(() => { renderChart(); renderTodayStats(); renderTopDonor(); renderHoloCards(); renderNewUsers(); }, 50); }
     if (page === 'donors') { renderDonors(); renderDonorSummary(); }
 }
 
@@ -1064,6 +1071,37 @@ function renderTopDonor() {
     }
 
     card.style.display = 'flex';
+}
+
+// ============ NEW USERS ============
+function renderNewUsers() {
+    const countEl = document.getElementById('newUsersCount');
+    const bodyEl = document.getElementById('newUsersBody');
+    if (!countEl || !bodyEl) return;
+
+    countEl.textContent = newUsersData.length;
+
+    if (!newUsersData || newUsersData.length === 0) {
+        bodyEl.innerHTML = '<div class="empty-state">Belum ada user baru.</div>';
+        return;
+    }
+
+    bodyEl.innerHTML = newUsersData.slice(0, 10).map(u => {
+        const date = new Date(u.time);
+        const timeStr = date.toLocaleString('id-ID', {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+        const initial = (u.name || '?').charAt(0).toUpperCase();
+        const phoneDisplay = u.id.length > 8 ? u.id.slice(0, 4) + '****' + u.id.slice(-3) : u.id;
+        return `<div class="nu-item">
+            <div class="nu-avatar">${escapeHtml(initial)}</div>
+            <div class="nu-info">
+                <div class="nu-name">${escapeHtml(u.name)}</div>
+                <div class="nu-phone">${escapeHtml(phoneDisplay)}</div>
+            </div>
+            <div class="nu-time">${timeStr}</div>
+        </div>`;
+    }).join('');
 }
 
 // ============ UTILS ============
