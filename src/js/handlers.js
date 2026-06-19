@@ -57,10 +57,17 @@ const handleMenu = (text) => {
     }
     if (text === '2') {
         return '📦 *Produk & Layanan*\n\n' +
-            '🌱 *Produk Pertanian:*\n' +
-            '• Sayuran hidroponik segar\n' +
-            '• Bibit tanaman (stroberi, sayuran, dll)\n' +
-            '• Pupuk organik\n\n' +
+            '🌱 *Lain-Lain Pertanian:*\n' +
+            '• Pupuk NPK (1kg / 500gr)\n' +
+            '• Tanah kompos\n\n' +
+            '🎁 *Paket Bundling:*\n' +
+            '• Bibit biji + Tanah + Pupuk\n' +
+            '• Bibit jadi (polybag) + Pupuk\n' +
+            '• Bibit sayur 7 jenis\n\n' +
+            '🌿 *Bibit Tanaman (sudah tumbuh):*\n' +
+            '• Stroberi, Terong, Tomat, Tomat ceri, Cabe\n\n' +
+            '🥬 *Hasil Panen Segar:*\n' +
+            '• Kangkung, Terong putih, Tomat, Cabe, Timun, Seledri\n\n' +
             '📚 *Program Edukasi:*\n' +
             '• Pelatihan bertani hidroponik\n' +
             '• Workshop agribisnis\n' +
@@ -73,10 +80,35 @@ const handleMenu = (text) => {
     }
     if (text === '3') {
         return '💰 *Daftar Harga*\n\n' +
-            '🌱 *Produk Pertanian:*\n' +
-            '• Sayur hidroponik/ikat — Rp5.000 - Rp10.000\n' +
-            '• Bibit tanaman — Rp2.000 - Rp15.000\n' +
-            '• Paket sayur mingguan — Rp50.000\n\n' +
+            '🌱 *Lain-Lain Pertanian:*\n' +
+            '• Pupuk NPK 1kg — Rp25.000\n' +
+            '• Pupuk NPK 500gr — Rp15.000\n' +
+            '• Tanah kompos/karung — Rp20.000\n\n' +
+            '🎁 *Paket Bundling (Hemat):*\n' +
+            '1. Bibit biji + Tanah + Pupuk — Rp50.000\n' +
+            '2. Bibit jadi (polybag) + Pupuk — Rp25.000 - Rp50.000\n' +
+            '3. Bibit sayur biji 7 jenis — Rp30.000\n\n' +
+            '🌿 *Bibit Tanaman (sudah tumbuh):*\n' +
+            '• Stroberi kecil/bibit — Rp5.000\n' +
+            '• Stroberi besar — Rp25.000\n' +
+            '• Terong — Rp10.000\n' +
+            '• Tomat ceri kecil — Rp10.000\n' +
+            '• Tomat ceri siap buah — Rp40.000\n' +
+            '• Tomat kecil — Rp5.000\n' +
+            '• Tomat sedang — Rp10.000\n' +
+            '• Tomat siap buah — Rp35.000\n' +
+            '• Cabe kecil — Rp5.000\n' +
+            '• Cabe sedang — Rp15.000\n' +
+            '• Cabe siap buah — Rp35.000\n\n' +
+            '🥬 *Hasil Panen Segar:*\n' +
+            '• Kangkung per ikat — Rp5.000\n' +
+            '• Kangkung per kg — Rp10.000\n' +
+            '• Terong putih per kg — Rp15.000\n' +
+            '• Tomat per kg — Rp10.000\n' +
+            '• Cabe per ons — Rp8.000\n' +
+            '• Cabe per kg — Rp80.000\n' +
+            '• Timun per kg — Rp15.000\n' +
+            '• Seledri per ons — Rp3.000\n\n' +
             '📚 *Program Edukasi:*\n' +
             '• Pelatihan hidroponik dasar — Rp50.000/orang\n' +
             '• Workshop agribisnis — Rp75.000/orang\n' +
@@ -85,6 +117,7 @@ const handleMenu = (text) => {
             '• Wisata panen — Rp35.000/orang\n' +
             '• Paket keluarga (4-5 org) — Rp150.000\n' +
             '• Gathering (min. 20 org) — hubungi admin\n\n' +
+            '📌 *Catatan:* harga menyesuaikan pasar\n' +
             '🎉 Diskon khusus: majelis taklim, pelajar, pesantren\n\n' +
             '👉 Balas *4* untuk info Masjid Ismuhu Yahya';
     }
