@@ -42,6 +42,17 @@ Ketik angka atau tanya langsung aja kak`;
 
 const MEDIA_TYPES = ['image', 'video', 'audio', 'document', 'sticker'];
 
+const _missing = [];
+if (!process.env.GROQ_API_KEY) _missing.push('GROQ_API_KEY');
+if (!process.env.ADMIN_ID) _missing.push('ADMIN_ID');
+if (!process.env.WEB_UI_EMAIL) _missing.push('WEB_UI_EMAIL');
+if (!process.env.WEB_UI_PASSWORD) _missing.push('WEB_UI_PASSWORD');
+if (_missing.length > 0) {
+    console.error(`\n❌ ENV WAJIB BELUM DIISI: ${_missing.join(', ')}`);
+    console.error('   Salin .env.example ke .env dan isi semua nilai wajib.\n');
+    process.exit(1);
+}
+
 module.exports = {
     SYSTEM_PROMPT,
     MENU_TEXT,
@@ -54,4 +65,7 @@ module.exports = {
     ADMIN_ID: process.env.ADMIN_ID,
     GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     MAX_TOKENS: parseInt(process.env.MAX_TOKENS) || 250,
+    WEB_UI_EMAIL: process.env.WEB_UI_EMAIL,
+    WEB_UI_PASSWORD: process.env.WEB_UI_PASSWORD,
+    NODE_ENV: process.env.NODE_ENV || 'development',
 };

@@ -19,16 +19,43 @@ const webPort = config.WEB_PORT || 3000;
 // SESSION / AUTH TOKENS
 // =====================
 const validTokens = new Map();
-const AUTH_EMAIL = 'owner@gmail.com';
-const AUTH_PASSWORD = 'owner123';
+const AUTH_EMAIL = config.WEB_UI_EMAIL;
+const AUTH_PASSWORD = config.WEB_UI_PASSWORD;
+const TOKEN_TTL = 7 * 24 * 60 * 60 * 1000; // 7 hari
+
+// Brute-force protection: maks 5 gagal per IP per 15 menit
+const loginAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
+const checkLoginRateLimit = (ip) => {
+    const now = Date.now();
+    const entry = loginAttempts.get(ip);
+    if (!entry) return false;
+    if (now - entry.firstAt > LOCKOUT_MS) { loginAttempts.delete(ip); return false; }
+    return entry.count >= MAX_ATTEMPTS;
+};
+
+const recordLoginFail = (ip) => {
+    const now = Date.now();
+    const entry = loginAttempts.get(ip);
+    if (!entry || now - entry.firstAt > LOCKOUT_MS) {
+        loginAttempts.set(ip, { count: 1, firstAt: now });
+    } else {
+        entry.count++;
+    }
+};
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
     if (token && validTokens.has(token)) {
-        req.user = validTokens.get(token);
-        return next();
+        const session = validTokens.get(token);
+        if (Date.now() < session.expiresAt) {
+            req.user = session;
+            return next();
+        }
+        validTokens.delete(token); // expired
     }
-    // Allow login page and public assets
     if (req.path === '/login.html' || req.path.startsWith('/api/')) {
         return next();
     }
@@ -56,20 +83,32 @@ app.use((req, res, next) => {
 // AUTH API
 // =====================
 app.post('/api/login', (req, res) => {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
+
+    if (checkLoginRateLimit(ip)) {
+        return res.status(429).json({ ok: false, error: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.' });
+    }
+
     const { email, password } = req.body || {};
     if (email === AUTH_EMAIL && password === AUTH_PASSWORD) {
+        loginAttempts.delete(ip);
         const token = crypto.randomUUID();
-        validTokens.set(token, { email, loginAt: Date.now() });
-        // Hapus token lama untuk user yang sama
+        const expiresAt = Date.now() + TOKEN_TTL;
+        validTokens.set(token, { email, loginAt: Date.now(), expiresAt });
         for (const [t, u] of validTokens) {
             if (u.email === email && t !== token) validTokens.delete(t);
         }
+        const isProduction = config.NODE_ENV === 'production';
         res.cookie('token', token, {
-            httpOnly: true, sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: isProduction,
+            maxAge: TOKEN_TTL,
         });
         return res.json({ ok: true, token });
     }
+
+    recordLoginFail(ip);
     res.status(401).json({ ok: false, error: 'Email atau password salah.' });
 });
 
@@ -206,6 +245,11 @@ app.get('/api/donors/export/xlsx', async (req, res) => {
         console.error('❌ Gagal generate XLSX:', err.message);
         res.status(500).json({ error: 'Gagal generate Excel' });
     }
+});
+
+// Health check — public, no auth required
+app.get('/', (req, res) => {
+    res.send('🚀 Jabatangan Bot Active!');
 });
 
 // =====================
@@ -506,7 +550,8 @@ state.io.on('connection', (socket) => {
     });
 });
 
-server.listen(config.WEB_PORT, () => {
-    console.log(`🌐 Jabatangan: http://localhost:${config.WEB_PORT}`);
-    console.log(`📌 Buka browser dan akses http://localhost:${config.WEB_PORT}`);
+server.listen(config.WEB_PORT, '0.0.0.0', () => {
+    console.log(`🌐 Web jalan di port ${config.WEB_PORT}`);
+    console.log(`📌 Lokal: http://localhost:${config.WEB_PORT}`);
+    console.log(`🌍 Publik: http://jabatangan.my.id`);
 });
