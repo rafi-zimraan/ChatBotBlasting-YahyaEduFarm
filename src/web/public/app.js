@@ -13,6 +13,8 @@ let donorsData = [];
 let newUsersData = [];
 let activityChart = null;
 let currentPeriod = 'today';
+let currentQr = null;
+let waConnected = false;
 
 // Socket.io connection dengan token dari login
 const savedToken = sessionStorage.getItem('jabatangan-token');
@@ -47,11 +49,31 @@ socket.on('state', (data) => {
     if (data.newUsers) { newUsersData = data.newUsers; renderNewUsers(); }
     if (data.user) renderProfile(data.user);
 
+    if (data.waStatus) updateWaBadge(data.waStatus);
+    if (data.qrCode) { currentQr = data.qrCode; }
+
     updateStatus(data);
     renderGroups();
     renderStats(data);
     renderBlastHistory();
     renderHoloCards();
+});
+
+socket.on('qr', (qr) => {
+    currentQr = qr;
+    updateWaBadge('qr');
+    showQrModal(qr);
+});
+
+socket.on('wa-status', (status) => {
+    updateWaBadge(status);
+    if (status === 'ready') {
+        currentQr = null;
+        setQrConnected();
+        showToast('WhatsApp Terhubung', 'Bot siap menerima pesan', '✅');
+    } else if (status === 'disconnected') {
+        showToast('WhatsApp Terputus', 'Bot tidak aktif sementara', '⚠️');
+    }
 });
 
 socket.on('status-update', (data) => {
@@ -1105,6 +1127,83 @@ function renderNewUsers() {
 }
 
 // ============ UTILS ============
+// ============ QR CODE MODAL ============
+function updateWaBadge(status) {
+    const btn  = document.getElementById('waBadge');
+    const dot  = document.getElementById('waBadgeDot');
+    const text = document.getElementById('waBadgeText');
+    if (!btn) return;
+
+    btn.classList.remove('wa-ready', 'wa-qr');
+
+    if (status === 'ready') {
+        dot.className = 'status-dot green';
+        text.textContent = 'WhatsApp Online';
+        btn.classList.add('wa-ready');
+        btn.title = 'WhatsApp terhubung';
+        waConnected = true;
+    } else if (status === 'qr') {
+        dot.className = 'status-dot orange';
+        text.textContent = 'Scan QR';
+        btn.classList.add('wa-qr');
+        btn.title = 'Klik untuk scan QR WhatsApp';
+        waConnected = false;
+    } else {
+        dot.className = 'status-dot red';
+        text.textContent = 'WhatsApp Offline';
+        btn.title = 'WhatsApp tidak terhubung';
+        waConnected = false;
+    }
+}
+
+function showQrModal(qr) {
+    const modal = document.getElementById('qrModal');
+    const canvas = document.getElementById('qrCodeCanvas');
+    const badge  = document.getElementById('qrStatusBadge');
+    if (!modal || !canvas) return;
+
+    canvas.innerHTML = '';
+    new QRCode(canvas, {
+        text: qr,
+        width: 250,
+        height: 250,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+    });
+
+    if (badge) { badge.className = 'qr-status-badge qr-waiting'; badge.textContent = 'Menunggu scan...'; }
+    modal.style.display = 'flex';
+}
+
+function openQrModal() {
+    if (waConnected) return;
+    if (currentQr) {
+        showQrModal(currentQr);
+    } else {
+        const modal = document.getElementById('qrModal');
+        const canvas = document.getElementById('qrCodeCanvas');
+        if (!modal || !canvas) return;
+        canvas.innerHTML = '<p style="color:#8b949e;font-size:13px;padding:80px 20px;">QR belum tersedia.<br>Bot sedang memulai...</p>';
+        modal.style.display = 'flex';
+    }
+}
+
+function closeQrModal() {
+    const modal = document.getElementById('qrModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleQrOverlayClick(e) {
+    if (e.target === document.getElementById('qrModal')) closeQrModal();
+}
+
+function setQrConnected() {
+    const badge = document.getElementById('qrStatusBadge');
+    if (badge) { badge.className = 'qr-status-badge qr-connected'; badge.textContent = 'Terhubung! Menutup...'; }
+    setTimeout(closeQrModal, 1500);
+}
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

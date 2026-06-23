@@ -14,11 +14,16 @@ client.on('qr', (qr) => {
     const qrcode = require('qrcode-terminal');
     console.log('📱 Scan QR Code berikut dengan WhatsApp kamu:');
     qrcode.generate(qr, { small: true });
+    state.qrCode = qr;
+    state.waStatus = 'qr';
+    if (state.io) state.io.emit('qr', qr);
 });
 
 client.on('ready', async () => {
     console.log('✅ Jabatangan — Bot WhatsApp siap!');
 
+    state.qrCode = null;
+    state.waStatus = 'ready';
     state.botOwnId = client.info.wid._serialized;
     console.log(`📱 Nomor bot: ${state.botOwnId}`);
 
@@ -33,8 +38,16 @@ client.on('ready', async () => {
     console.log(`⏰ Scheduler blast: aktif`);
 
     if (state.io) {
+        state.io.emit('wa-status', 'ready');
         state.io.emit('status-update', { botAktif: state.botAktif, botMenu: state.botMenu });
     }
+});
+
+client.on('disconnected', () => {
+    state.qrCode = null;
+    state.waStatus = 'disconnected';
+    if (state.io) state.io.emit('wa-status', 'disconnected');
+    console.log('⚠️ WhatsApp terputus — menunggu reconnect...');
 });
 
 client.on('group_join', async () => {

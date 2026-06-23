@@ -314,6 +314,8 @@ const sendFullState = (socket) => {
         analytics: state.analytics,
         donors: safeDonors,
         newUsers: state.newUsers,
+        qrCode: state.qrCode || null,
+        waStatus: state.waStatus || 'disconnected',
     });
 };
 

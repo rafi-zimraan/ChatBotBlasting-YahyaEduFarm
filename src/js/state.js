@@ -115,6 +115,8 @@ const state = {
     botOwnId: null,
     io: null,
     batasiPesanPerHari: true,
+    qrCode: null,
+    waStatus: 'disconnected',
 
     newUsers: (saved && saved.newUsers) ? saved.newUsers : [],
 };
