@@ -1788,15 +1788,23 @@ function renderConvList() {
         });
     }
 
+    // Normalize phone for comparison (0895→62895, strip symbols)
+    const normPhone = (p) => String(p || '').replace(/[\s\-\+\(\)\.]/g, '').replace(/^0/, '62');
+
     // Filter
     let filtered = convArr;
     if (search) filtered = filtered.filter(c =>
         (c.name || '').toLowerCase().includes(search) ||
         (c.lastMsg || '').toLowerCase().includes(search) ||
-        (c.phone || '').includes(search));
+        normPhone(c.phone || c.id).includes(search.replace(/\D/g, '')));
     if (labelFilter !== 'all') {
-        const ids = new Set(contactsData.filter(c => c.label === labelFilter).map(c => c.id || c.phone));
-        filtered = filtered.filter(c => ids.has(c.id) || ids.has(c.phone));
+        const labelIds = new Set(
+            contactsData.filter(c => c.label === labelFilter)
+                .map(c => normPhone(c.id || c.phone))
+        );
+        filtered = filtered.filter(c =>
+            labelIds.has(normPhone(c.id)) || labelIds.has(normPhone(c.phone))
+        );
     }
 
     if (filtered.length === 0) {
@@ -1856,15 +1864,61 @@ function openConversation(userId) {
     document.getElementById('mcName').textContent = conv.name || userId;
 
     const phoneEl = document.getElementById('mcPhone');
-    if (phoneEl) phoneEl.textContent = conv.phone || userId;
+    if (phoneEl) phoneEl.textContent = '+' + (conv.phone || userId);
 
     const csEl = document.getElementById('mcCsAgent');
     if (csEl) csEl.textContent = conv.isHandover ? 'CS Agt: Admin' : 'CS Agt: Bot';
 
     renderChatMessages(conv.messages || []);
+    renderBlastHistory(userId);
     scrollChatToBottom();
     const input = document.getElementById('mcReplyInput');
     if (input) input.focus();
+}
+
+function renderBlastHistory(userId) {
+    const container = document.getElementById('mcBlastHistory');
+    if (!container) return;
+    const normPhone = (p) => String(p || '').replace(/[\s\-\+\(\)\.]/g, '').replace(/^0/, '62');
+    const conv = conversationsData[userId] || {};
+    const convNorm = normPhone(conv.phone || userId);
+
+    const blasts = campaignsData.filter(c => {
+        if (!c.targetLabel) return true;
+        const targets = contactsData.filter(ct => ct.label === c.targetLabel);
+        return targets.some(ct => normPhone(ct.id || ct.phone) === convNorm);
+    });
+
+    if (blasts.length === 0) {
+        container.innerHTML = '';
+        const bar = document.getElementById('mcBlastBar');
+        if (bar) bar.style.display = 'none';
+        return;
+    }
+
+    const bar = document.getElementById('mcBlastBar');
+    const toggle = document.getElementById('mcBlastToggle');
+    if (bar) bar.style.display = 'flex';
+    if (toggle) toggle.textContent = `Riwayat Blast (${blasts.length})`;
+
+    container.innerHTML = blasts.map(b => `
+        <div class="mc-blast-item">
+            <div class="mc-blast-msg">${escapeHtml((b.message || '').substring(0, 120))}${b.message && b.message.length > 120 ? '...' : ''}</div>
+            <div class="mc-blast-meta">
+                <span class="mc-blast-name">${escapeHtml(b.name)}</span>
+                <span class="camp-badge ${b.status === 'done' ? 'camp-done' : b.status === 'running' ? 'camp-running' : 'camp-scheduled'}">${b.status === 'done' ? 'Selesai' : b.status === 'running' ? 'Berjalan' : 'Terjadwal'}</span>
+                <span style="font-size:11px;color:var(--text-muted)">${b.sentCount || 0}/${b.totalTarget || 0} terkirim</span>
+            </div>
+        </div>`).join('');
+}
+
+function toggleMcBlast() {
+    const hist = document.getElementById('mcBlastHistory');
+    const chev = document.getElementById('mcBlastChevron');
+    if (!hist) return;
+    const open = hist.style.display !== 'none';
+    hist.style.display = open ? 'none' : 'block';
+    if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 function filterPendingContacts(e) {
