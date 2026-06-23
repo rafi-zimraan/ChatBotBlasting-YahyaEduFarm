@@ -181,6 +181,11 @@ const executePersonalCampaign = async (campaign) => {
             campaign.sentCount++;
             console.log(`✅ Campaign → ${contact.name} (${i + 1}/${targets.length})`);
 
+            // Catat ke Monitoring Chat
+            const userId = waId.replace('@c.us', '');
+            state.recordMsg(userId, contact.name || contact.phone, campaign.message, true);
+            state.saveData();
+
             if (state.io) {
                 state.io.emit('campaign-progress', {
                     id: campaign.id,

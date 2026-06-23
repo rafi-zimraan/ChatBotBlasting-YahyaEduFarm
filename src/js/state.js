@@ -123,11 +123,18 @@ const state = {
     contacts: (saved && saved.contacts) ? saved.contacts : [],
     personalCampaigns: (saved && saved.personalCampaigns) ? saved.personalCampaigns : [],
 
-    conversations: {},
+    conversations: (saved && saved.conversations) ? saved.conversations : {},
     blockedContacts: (saved && saved.blockedContacts) ? saved.blockedContacts : [],
 };
 
 state.saveData = () => {
+    // Persist conversations: max 50 msg per kontak, max 300 kontak
+    const convsToSave = Object.fromEntries(
+        Object.entries(state.conversations)
+            .sort(([, a], [, b]) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1)
+            .slice(0, 300)
+            .map(([k, v]) => [k, { ...v, messages: (v.messages || []).slice(-50) }])
+    );
     storage.save({
         customFAQ: state.customFAQ,
         customFAQBlasting: state.customFAQBlasting,
@@ -138,7 +145,33 @@ state.saveData = () => {
         contacts: state.contacts,
         personalCampaigns: state.personalCampaigns,
         blockedContacts: state.blockedContacts,
+        conversations: convsToSave,
     });
+};
+
+state.buildConvList = () => {
+    return Object.values(state.conversations)
+        .sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1)
+        .map(c => ({ id: c.id, name: c.name, phone: c.phone, lastMsg: c.lastMsg, lastTime: c.lastTime, unread: c.unread || 0 }));
+};
+
+state.recordMsg = (userId, name, content, isBot = false) => {
+    if (!userId) return;
+    if (!state.conversations[userId]) {
+        state.conversations[userId] = { id: userId, name: name || userId, phone: userId, messages: [], lastMsg: '', lastTime: null, unread: 0 };
+    }
+    const conv = state.conversations[userId];
+    if (name && name !== userId && !isBot) conv.name = name;
+    const msg = { from: isBot ? 'bot' : 'user', content: content || '', time: new Date().toISOString() };
+    conv.messages.push(msg);
+    if (conv.messages.length > 150) conv.messages = conv.messages.slice(-150);
+    conv.lastMsg = (content || '').substring(0, 80);
+    conv.lastTime = msg.time;
+    if (!isBot) conv.unread = (conv.unread || 0) + 1;
+    if (state.io) {
+        state.io.emit('conv-update', { id: userId, conv: { ...conv, messages: conv.messages.slice(-20) } });
+        state.io.emit('conv-list-update', state.buildConvList());
+    }
 };
 
 module.exports = state;

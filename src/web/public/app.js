@@ -60,6 +60,10 @@ socket.on('state', (data) => {
     if (data.contacts) { contactsData = data.contacts; renderContacts(); }
     if (data.personalCampaigns) { campaignsData = data.personalCampaigns; renderCampaigns(); renderCampaignStats(); }
     if (data.blockedContacts) { blockedData = data.blockedContacts; renderBlocked(); }
+    if (data.conversations && data.conversations.length) {
+        data.conversations.forEach(c => { conversationsData[c.id] = { ...conversationsData[c.id], ...c }; });
+        renderConvList();
+    }
     if (data.user) renderProfile(data.user);
 
     if (data.waStatus) updateWaBadge(data.waStatus);

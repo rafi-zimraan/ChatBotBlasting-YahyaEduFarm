@@ -319,6 +319,9 @@ const sendFullState = (socket) => {
         contacts: state.contacts || [],
         personalCampaigns: state.personalCampaigns || [],
         blockedContacts: state.blockedContacts || [],
+        conversations: Object.values(state.conversations || {})
+            .sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1)
+            .map(c => ({ ...c, messages: (c.messages || []).slice(-20) })),
     });
 };
 
