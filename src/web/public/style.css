@@ -2748,6 +2748,13 @@ body {
     flex-shrink: 0;
 }
 
+.mc-conv-phone {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+    margin-bottom: 3px;
+}
+
 .mc-conv-tags {
     display: flex;
     gap: 4px;

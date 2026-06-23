@@ -352,7 +352,13 @@ function navigateTo(page) {
     if (page === 'donors') { renderDonors(); renderDonorSummary(); }
     if (page === 'contacts') { renderContacts(); }
     if (page === 'blast') { renderCampaigns(); renderCampaignStats(); }
-    if (page === 'monitoring') { socket.emit('get-conversations'); renderConvList(); }
+    if (page === 'monitoring') {
+        // Reset filter & search setiap kali buka halaman
+        const s = document.getElementById('monitorSearch'); if (s) s.value = '';
+        const l = document.getElementById('monitorLabelFilter'); if (l) l.value = 'all';
+        socket.emit('get-conversations');
+        renderConvList();
+    }
     if (page === 'blocked') { renderBlocked(); }
 }
 
@@ -1808,7 +1814,13 @@ function renderConvList() {
     }
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="padding:28px 16px;font-size:13px">Belum ada percakapan masuk.</div>';
+        const msg = convArr.length > 0
+            ? `<div class="empty-state" style="padding:20px 14px;font-size:12px">
+                Tidak ditemukan.<br>
+                <a href="#" onclick="clearMonitorFilter()" style="color:var(--primary);font-size:11px">Hapus filter</a>
+               </div>`
+            : `<div class="empty-state" style="padding:28px 16px;font-size:13px">Belum ada percakapan masuk.</div>`;
+        container.innerHTML = msg;
         return;
     }
 
@@ -1816,27 +1828,30 @@ function renderConvList() {
         const initial = (c.name || '?').charAt(0).toUpperCase();
         const isSelected = c.id === selectedConvId;
         const isBlocked = blockedData.some(b => b.id === c.id);
-        const isHandover = state && state.handoverUsers && state.handoverUsers[c.id];
         const time = c.lastTime ? formatConvTime(c.lastTime) : '';
         const unread = c.unread > 0 ? `<span class="mc-unread-badge">${c.unread}</span>` : '';
-        // Find contact label
-        const contact = contactsData.find(ct => ct.id === c.id || ct.phone === c.phone);
+        const normP = (p) => String(p||'').replace(/[\s\-\+\(\)\.]/g,'').replace(/^0/,'62');
+        const contact = contactsData.find(ct =>
+            normP(ct.id||ct.phone) === normP(c.id) || normP(ct.id||ct.phone) === normP(c.phone)
+        );
         const labelChip = contact?.label ? getLabelChipHtml(contact.label) : '';
-        const csChip = isHandover
-            ? `<span class="mc-chip mc-chip-cs">CS</span>`
-            : `<span class="mc-chip mc-chip-bot">Bot</span>`;
-        const blockedChip = isBlocked ? `<span class="mc-chip mc-chip-block">Diblokir</span>` : '';
+        const statusChip = isBlocked
+            ? `<span class="mc-chip mc-chip-block">Diblokir</span>`
+            : (c.isHandover ? `<span class="mc-chip mc-chip-cs">CS</span>` : `<span class="mc-chip mc-chip-bot">Bot</span>`);
+        const displayName = c.name && c.name !== c.id ? escapeHtml(c.name) : `<span style="color:var(--text-muted);font-style:italic">+${escapeHtml(c.id || '')}</span>`;
+        const phoneDisplay = c.phone && c.phone !== c.id ? `<div class="mc-conv-phone">+${escapeHtml(c.phone)}</div>` : '';
 
         return `<div class="mc-conv-item ${isSelected ? 'active' : ''} ${isBlocked ? 'mc-conv-blocked' : ''}" onclick="selectConversation('${c.id}')">
             <div class="mc-conv-avatar">${escapeHtml(initial)}</div>
             <div class="mc-conv-body">
                 <div class="mc-conv-top">
-                    <span class="mc-conv-name">${escapeHtml(c.name || c.id)}</span>
+                    <span class="mc-conv-name">${displayName}</span>
                     <span class="mc-conv-time">${time}</span>
                 </div>
-                <div class="mc-conv-tags">${csChip}${labelChip}${blockedChip}</div>
+                ${phoneDisplay}
+                <div class="mc-conv-tags">${statusChip}${labelChip}</div>
                 <div class="mc-conv-preview">
-                    <span class="mc-conv-lastmsg">${escapeHtml((c.lastMsg || 'Belum ada pesan').substring(0, 50))}</span>
+                    <span class="mc-conv-lastmsg">${escapeHtml((c.lastMsg || 'Belum ada pesan').substring(0, 52))}</span>
                     ${unread}
                 </div>
             </div>
@@ -1845,6 +1860,12 @@ function renderConvList() {
 }
 
 function filterConversations() { renderConvList(); }
+
+function clearMonitorFilter() {
+    const s = document.getElementById('monitorSearch'); if (s) s.value = '';
+    const l = document.getElementById('monitorLabelFilter'); if (l) l.value = 'all';
+    renderConvList();
+}
 
 function selectConversation(userId) {
     selectedConvId = userId;
