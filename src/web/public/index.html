@@ -101,6 +101,32 @@
                         </div>
                     </div>
 
+                    <!-- WhatsApp Connection Banner -->
+                    <div id="dashQrCard" class="dash-qr-card" style="display:none">
+                        <div class="dash-qr-left">
+                            <div class="dash-qr-icon-wrap">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3"/><path d="M21 21v.01"/><path d="M12 7v3h3"/><path d="M12 12v.01"/><path d="M12 21v-3"/><path d="M15 21h3v-3"/></svg>
+                            </div>
+                            <div class="dash-qr-info">
+                                <h3 class="dash-qr-title">Hubungkan WhatsApp</h3>
+                                <p class="dash-qr-desc">Scan QR code ini dari aplikasi WhatsApp. Tim atau anggota lain juga bisa scan langsung dari halaman dashboard ini tanpa perlu akses server.</p>
+                                <ol class="dash-qr-steps">
+                                    <li>Buka <strong>WhatsApp</strong> di HP</li>
+                                    <li>Ketuk <strong>Menu (⋮) → Perangkat Tertaut</strong></li>
+                                    <li>Pilih <strong>Tautkan Perangkat</strong></li>
+                                    <li>Arahkan kamera ke QR code di sebelah kanan</li>
+                                </ol>
+                                <div class="dash-qr-badge" id="dashQrBadge">Menunggu QR code...</div>
+                            </div>
+                        </div>
+                        <div class="dash-qr-canvas-wrap" id="dashQrCanvas">
+                            <div class="dash-qr-loading" id="dashQrLoading">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3"/><path d="M21 21v.01"/><path d="M12 7v3h3"/><path d="M12 12v.01"/><path d="M12 21v-3"/><path d="M15 21h3v-3"/></svg>
+                                <span>QR sedang disiapkan...</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Periode Selector -->
                     <div class="period-tabs" id="periodTabs">
                         <button class="period-tab active" data-period="today" onclick="switchPeriod('today')">Hari Ini</button>

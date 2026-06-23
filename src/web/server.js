@@ -247,9 +247,9 @@ app.get('/api/donors/export/xlsx', async (req, res) => {
     }
 });
 
-// Health check — public, no auth required
+// Root redirect ke dashboard (auth middleware akan handle login)
 app.get('/', (req, res) => {
-    res.send('🚀 Jabatangan Bot Active!');
+    res.redirect('/index.html');
 });
 
 // =====================
