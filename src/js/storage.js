@@ -15,6 +15,8 @@ const load = () => {
 
 const save = (data) => {
     try {
+        const dir = path.dirname(DATA_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
     } catch (err) {
         console.error('❌ Gagal simpan data.json:', err.message);
