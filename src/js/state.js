@@ -119,6 +119,12 @@ const state = {
     waStatus: 'disconnected',
 
     newUsers: (saved && saved.newUsers) ? saved.newUsers : [],
+
+    contacts: (saved && saved.contacts) ? saved.contacts : [],
+    personalCampaigns: (saved && saved.personalCampaigns) ? saved.personalCampaigns : [],
+
+    conversations: {},
+    blockedContacts: (saved && saved.blockedContacts) ? saved.blockedContacts : [],
 };
 
 state.saveData = () => {
@@ -129,6 +135,9 @@ state.saveData = () => {
         analytics: state.analytics,
         donors: state.donors,
         newUsers: state.newUsers,
+        contacts: state.contacts,
+        personalCampaigns: state.personalCampaigns,
+        blockedContacts: state.blockedContacts,
     });
 };
 

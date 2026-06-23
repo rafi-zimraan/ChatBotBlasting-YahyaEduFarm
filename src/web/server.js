@@ -316,6 +316,9 @@ const sendFullState = (socket) => {
         newUsers: state.newUsers,
         qrCode: state.qrCode || null,
         waStatus: state.waStatus || 'disconnected',
+        contacts: state.contacts || [],
+        personalCampaigns: state.personalCampaigns || [],
+        blockedContacts: state.blockedContacts || [],
     });
 };
 
@@ -543,6 +546,147 @@ state.io.on('connection', (socket) => {
         if (idx !== -1) {
             state.donors.splice(idx, 1);
             state.io.emit('donors-update', state.donors);
+            state.saveData();
+        }
+    });
+
+    // ---- CONTACTS (PERSONAL BLAST) EVENTS ----
+    socket.on('add-contact', (data) => {
+        const { name, phone, label } = data;
+        if (!name || !phone) return;
+        const newId = state.contacts.length > 0 ? Math.max(...state.contacts.map((c) => c.id)) + 1 : 1;
+        state.contacts.push({ id: newId, name: name.trim(), phone: phone.trim(), label: (label || '').trim() });
+        state.io.emit('contacts-update', state.contacts);
+        state.saveData();
+        console.log(`🌐 Kontak baru: ${name} — ${phone}`);
+    });
+
+    socket.on('remove-contact', (id) => {
+        const idx = state.contacts.findIndex((c) => c.id === id);
+        if (idx !== -1) {
+            state.contacts.splice(idx, 1);
+            state.io.emit('contacts-update', state.contacts);
+            state.saveData();
+        }
+    });
+
+    socket.on('edit-contact', (data) => {
+        const { id, name, phone, label } = data;
+        const contact = state.contacts.find((c) => c.id === id);
+        if (!contact) return;
+        if (name) contact.name = name.trim();
+        if (phone) contact.phone = phone.trim();
+        contact.label = (label || '').trim();
+        state.io.emit('contacts-update', state.contacts);
+        state.saveData();
+    });
+
+    socket.on('create-campaign', async (data) => {
+        const { name, message, targetLabel, speedDelay, scheduledAt } = data;
+        if (!name || !message) return;
+
+        let targets = state.contacts || [];
+        if (targetLabel) targets = targets.filter((c) => c.label === targetLabel);
+
+        const newId = state.personalCampaigns.length > 0
+            ? Math.max(...state.personalCampaigns.map((c) => c.id)) + 1
+            : 1;
+
+        const campaign = {
+            id: newId,
+            name: name.trim(),
+            message,
+            targetLabel: targetLabel || null,
+            speedDelay: speedDelay || 5000,
+            scheduledAt: scheduledAt || null,
+            status: scheduledAt ? 'scheduled' : 'running',
+            sentCount: 0,
+            failCount: 0,
+            totalTarget: targets.length,
+            createdAt: new Date().toISOString(),
+        };
+
+        state.personalCampaigns.unshift(campaign);
+        state.saveData();
+        state.io.emit('campaigns-update', state.personalCampaigns);
+        socket.emit('campaign-created', { id: newId, scheduledAt });
+        console.log(`🌐 Campaign baru: "${name}" → ${targets.length} kontak`);
+
+        if (!scheduledAt) {
+            scheduler.executePersonalCampaign(campaign);
+        }
+    });
+
+    socket.on('delete-campaign', (id) => {
+        const idx = state.personalCampaigns.findIndex((c) => c.id === id);
+        if (idx !== -1) {
+            state.personalCampaigns.splice(idx, 1);
+            state.io.emit('campaigns-update', state.personalCampaigns);
+            state.saveData();
+        }
+    });
+
+    socket.on('run-campaign', async (id) => {
+        const campaign = state.personalCampaigns.find((c) => c.id === id);
+        if (!campaign || campaign.status === 'running') return;
+        campaign.sentCount = 0;
+        campaign.failCount = 0;
+        scheduler.executePersonalCampaign(campaign);
+    });
+
+    // ---- MONITORING CHAT ----
+    socket.on('get-conversations', () => {
+        const list = Object.values(state.conversations || {})
+            .sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1);
+        socket.emit('conversations-list', list);
+    });
+
+    socket.on('get-conversation', (userId) => {
+        const conv = (state.conversations || {})[userId];
+        if (conv) {
+            conv.unread = 0;
+            socket.emit('conversation-detail', conv);
+            const list = Object.values(state.conversations).sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1)
+                .map(c => ({ id: c.id, name: c.name, phone: c.phone, lastMsg: c.lastMsg, lastTime: c.lastTime, unread: c.unread || 0 }));
+            state.io.emit('conv-list-update', list);
+        }
+    });
+
+    socket.on('send-cs-reply', async (data) => {
+        const { userId, message: msg } = data;
+        if (!userId || !msg) return;
+        try {
+            const waId = userId.includes('@') ? userId : userId + '@c.us';
+            await client.sendMessage(waId, msg);
+            socket.emit('cs-reply-sent', { ok: true });
+            console.log(`🌐 CS reply ke ${userId}: "${msg.substring(0, 40)}"`);
+        } catch (err) {
+            socket.emit('cs-reply-sent', { ok: false, error: err.message });
+            console.error('❌ CS reply gagal:', err.message);
+        }
+    });
+
+    socket.on('block-contact', (data) => {
+        const { id, name, phone, reason } = data;
+        if (!id) return;
+        if (!state.blockedContacts) state.blockedContacts = [];
+        if (!state.blockedContacts.find(c => c.id === id)) {
+            state.blockedContacts.push({
+                id, name: name || id, phone: phone || id,
+                blockedAt: new Date().toLocaleString('id-ID'),
+                reason: reason || 'Diblokir dari Chat',
+            });
+            state.io.emit('blocked-update', state.blockedContacts);
+            state.saveData();
+        }
+    });
+
+    socket.on('unblock-contact', (id) => {
+        if (!state.blockedContacts) return;
+        const idx = state.blockedContacts.findIndex(c => c.id === id);
+        if (idx !== -1) {
+            state.blockedContacts.splice(idx, 1);
+            state.io.emit('blocked-update', state.blockedContacts);
             state.saveData();
         }
     });

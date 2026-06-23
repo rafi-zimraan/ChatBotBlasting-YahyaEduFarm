@@ -136,6 +136,77 @@ const executeBlast = async (message, targetGroupIds = null, media = null) => {
     return result;
 };
 
+const normalizePhone = (phone) => {
+    let p = String(phone).replace(/[\s\-\+\(\)]/g, '');
+    if (p.startsWith('0')) p = '62' + p.slice(1);
+    if (!p.startsWith('62')) p = '62' + p;
+    return p + '@c.us';
+};
+
+const executePersonalCampaign = async (campaign) => {
+    const client = getClient();
+    if (!client || typeof client.sendMessage !== 'function') {
+        console.error('❌ Client tidak tersedia saat executePersonalCampaign');
+        campaign.status = 'failed';
+        if (state.io) state.io.emit('campaigns-update', state.personalCampaigns);
+        return;
+    }
+
+    let targets = state.contacts || [];
+    if (campaign.targetLabel) {
+        targets = targets.filter((c) => c.label === campaign.targetLabel);
+    }
+
+    campaign.status = 'running';
+    campaign.totalTarget = targets.length;
+    campaign.sentCount = 0;
+    campaign.failCount = 0;
+    if (state.io) state.io.emit('campaigns-update', state.personalCampaigns);
+
+    if (targets.length === 0) {
+        campaign.status = 'done';
+        state.saveData();
+        if (state.io) state.io.emit('campaigns-update', state.personalCampaigns);
+        return;
+    }
+
+    const speedDelay = campaign.speedDelay || 5000;
+    console.log(`📨 Campaign "${campaign.name}" → ${targets.length} kontak dimulai...`);
+
+    for (let i = 0; i < targets.length; i++) {
+        const contact = targets[i];
+        const waId = normalizePhone(contact.phone);
+        try {
+            await retry(() => client.sendMessage(waId, campaign.message));
+            campaign.sentCount++;
+            console.log(`✅ Campaign → ${contact.name} (${i + 1}/${targets.length})`);
+
+            if (state.io) {
+                state.io.emit('campaign-progress', {
+                    id: campaign.id,
+                    current: i + 1,
+                    total: targets.length,
+                    currentName: contact.name,
+                    sentCount: campaign.sentCount,
+                });
+                state.io.emit('campaigns-update', state.personalCampaigns);
+            }
+
+            const jitter = Math.floor(Math.random() * 2000);
+            await sleep(speedDelay + jitter);
+        } catch (err) {
+            campaign.failCount++;
+            console.error(`❌ Gagal campaign ke ${contact.name}: ${err.message}`);
+            await sleep(5000);
+        }
+    }
+
+    campaign.status = 'done';
+    state.saveData();
+    console.log(`✅ Campaign "${campaign.name}" selesai: ${campaign.sentCount} sukses, ${campaign.failCount} gagal`);
+    if (state.io) state.io.emit('campaigns-update', state.personalCampaigns);
+};
+
 const startScheduler = () => {
     if (state.blastSchedulerId) return;
     state.blastSchedulerId = setInterval(async () => {
@@ -148,6 +219,14 @@ const startScheduler = () => {
             if (jadwal.time === currentTime) {
                 console.log(`⏰ Jadwal blast terpicu: ${jadwal.time} — "${jadwal.message.substring(0, 40)}..."`);
                 await executeBlast(jadwal.message);
+            }
+        }
+
+        for (const campaign of (state.personalCampaigns || [])) {
+            if (campaign.status !== 'scheduled' || !campaign.scheduledAt) continue;
+            if (now >= new Date(campaign.scheduledAt)) {
+                console.log(`⏰ Campaign terjadwal terpicu: "${campaign.name}"`);
+                executePersonalCampaign(campaign);
             }
         }
     }, 30000);
@@ -163,6 +242,7 @@ const stopScheduler = () => {
 module.exports = {
     refreshGroups,
     executeBlast,
+    executePersonalCampaign,
     startScheduler,
     stopScheduler,
 };

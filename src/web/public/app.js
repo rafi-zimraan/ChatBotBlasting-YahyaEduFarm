@@ -17,6 +17,15 @@ let currentQr = null;
 let waConnected = false;
 let dashQrInstance = null;
 
+let contactsData = [];
+let selectedContacts = new Set();
+let campaignsData = [];
+let cmSelectedLabel = null;
+
+let conversationsData = {};
+let selectedConvId = null;
+let blockedData = [];
+
 // Socket.io connection dengan token dari login
 const savedToken = sessionStorage.getItem('jabatangan-token');
 if (!savedToken) {
@@ -48,6 +57,9 @@ socket.on('state', (data) => {
     if (data.analytics) { analyticsData = data.analytics; setTimeout(renderChart, 50); }
     if (data.donors) { donorsData = data.donors; renderDonors(); renderDonorSummary(); renderTopDonor(); }
     if (data.newUsers) { newUsersData = data.newUsers; renderNewUsers(); }
+    if (data.contacts) { contactsData = data.contacts; renderContacts(); }
+    if (data.personalCampaigns) { campaignsData = data.personalCampaigns; renderCampaigns(); renderCampaignStats(); }
+    if (data.blockedContacts) { blockedData = data.blockedContacts; renderBlocked(); }
     if (data.user) renderProfile(data.user);
 
     if (data.waStatus) updateWaBadge(data.waStatus);
@@ -59,6 +71,30 @@ socket.on('state', (data) => {
     renderStats(data);
     renderBlastHistory();
     renderHoloCards();
+});
+
+socket.on('contacts-update', (data) => {
+    contactsData = data;
+    renderContacts();
+});
+
+socket.on('campaigns-update', (data) => {
+    campaignsData = data;
+    renderCampaigns();
+    renderCampaignStats();
+});
+
+socket.on('campaign-progress', (data) => {
+    renderCampaigns();
+    renderCampaignStats();
+});
+
+socket.on('campaign-created', (data) => {
+    if (data.scheduledAt) {
+        showToast('Campaign dijadwalkan', `Blasting akan dikirim pada ${new Date(data.scheduledAt).toLocaleString('id-ID')}`, '⏰');
+    } else {
+        showToast('Blasting dimulai', 'Pesan sedang dikirim ke kontak...', '📨');
+    }
 });
 
 socket.on('qr', (qr) => {
@@ -147,6 +183,52 @@ socket.on('blast-complete', (data) => {
 
 socket.on('faq-update', (faqs) => { renderFaqs(faqs); });
 socket.on('faq-blast-update', (faqs) => { renderFaqsBlast(faqs); });
+
+socket.on('conversations-list', (list) => {
+    list.forEach(c => { conversationsData[c.id] = { ...conversationsData[c.id], ...c }; });
+    renderConvList();
+});
+
+socket.on('conv-update', (data) => {
+    const existing = conversationsData[data.id] || {};
+    conversationsData[data.id] = { ...existing, ...data.conv };
+    renderConvList();
+    if (selectedConvId === data.id) {
+        const msgs = data.conv.messages;
+        if (msgs && msgs.length) appendChatMessage(msgs[msgs.length - 1]);
+        scrollChatToBottom();
+    }
+});
+
+socket.on('conv-list-update', (list) => {
+    list.forEach(c => {
+        if (!conversationsData[c.id]) conversationsData[c.id] = {};
+        Object.assign(conversationsData[c.id], c);
+    });
+    renderConvList();
+});
+
+socket.on('conversation-detail', (conv) => {
+    conversationsData[conv.id] = conv;
+    openConversation(conv.id);
+});
+
+socket.on('cs-reply-sent', (data) => {
+    const btn = document.getElementById('mcSendBtn');
+    const input = document.getElementById('mcReplyInput');
+    if (btn) btn.disabled = false;
+    if (!data.ok) {
+        showToast('Gagal kirim', data.error || 'Coba lagi', '❌');
+    } else {
+        if (input) { input.value = ''; input.focus(); }
+    }
+});
+
+socket.on('blocked-update', (data) => {
+    blockedData = data;
+    renderBlocked();
+    renderConvList();
+});
 
 // ============ PROFILE ============
 function renderProfile(user) {
@@ -248,11 +330,14 @@ function navigateTo(page) {
 
     const titles = {
         dashboard: 'Dashboard',
+        monitoring: 'Monitoring Chat',
         groups: 'Groups',
         blast: 'Blast',
         schedule: 'Jadwal',
         faq: 'FAQ Bot',
-        donors: 'Donatur Tetap'
+        contacts: 'Kontak Personal',
+        donors: 'Donatur Tetap',
+        blocked: 'Kontak Diblokir',
     };
     document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
 
@@ -261,6 +346,10 @@ function navigateTo(page) {
     if (page === 'faq') socket.emit('request-state');
     if (page === 'dashboard') { setTimeout(() => { renderChart(); renderTodayStats(); renderTopDonor(); renderHoloCards(); renderNewUsers(); }, 50); }
     if (page === 'donors') { renderDonors(); renderDonorSummary(); }
+    if (page === 'contacts') { renderContacts(); }
+    if (page === 'blast') { renderCampaigns(); renderCampaignStats(); }
+    if (page === 'monitoring') { socket.emit('get-conversations'); renderConvList(); }
+    if (page === 'blocked') { renderBlocked(); }
 }
 
 // ============ STATUS ============
@@ -1248,4 +1337,663 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ============ BLAST TAB ============
+function switchBlastTab(tab, el) {
+    document.querySelectorAll('#page-blast .faq-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('blast-panel-group').style.display = tab === 'group' ? 'block' : 'none';
+    document.getElementById('blast-panel-personal').style.display = tab === 'personal' ? 'block' : 'none';
+    if (tab === 'personal') { renderCampaigns(); renderCampaignStats(); }
+}
+
+// ============ CONTACTS ============
+function updateContactPreview() {
+    const name = (document.getElementById('contactName')?.value || '').trim();
+    const phone = (document.getElementById('contactPhone')?.value || '').trim();
+    const label = (document.getElementById('contactLabel')?.value || '').trim();
+
+    document.getElementById('previewName').textContent = name || '—';
+    document.getElementById('previewPhone').textContent = phone || '—';
+    document.getElementById('previewLabel').textContent = label || '—';
+
+    if (phone) {
+        let p = phone.replace(/[\s\-\+\(\)]/g, '');
+        if (p.startsWith('0')) p = '62' + p.slice(1);
+        if (!p.startsWith('62')) p = '62' + p;
+        document.getElementById('previewWaId').textContent = p + '@c.us';
+    } else {
+        document.getElementById('previewWaId').textContent = '—';
+    }
+}
+
+function renderContacts() {
+    const tbody = document.getElementById('contactsTableBody');
+    if (!tbody) return;
+
+    const search = (document.getElementById('contactSearch')?.value || '').toLowerCase();
+    const labelFilter = document.getElementById('contactLabelFilter')?.value || 'all';
+
+    const allLabels = [...new Set(contactsData.map(c => c.label).filter(Boolean))].sort();
+
+    const labelSel = document.getElementById('contactLabelFilter');
+    if (labelSel) {
+        const cur = labelSel.value;
+        labelSel.innerHTML = '<option value="all">Semua Label</option>' +
+            allLabels.map(l => `<option value="${l}" ${cur === l ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('');
+    }
+
+    // Update datalist for contactLabel input
+    const dl = document.getElementById('existingLabelsList');
+    if (dl) dl.innerHTML = allLabels.map(l => `<option value="${escapeHtml(l)}">`).join('');
+
+    let filtered = contactsData;
+    if (labelFilter !== 'all') filtered = filtered.filter(c => c.label === labelFilter);
+    if (search) filtered = filtered.filter(c =>
+        (c.name || '').toLowerCase().includes(search) ||
+        (c.phone || '').includes(search) ||
+        (c.label || '').toLowerCase().includes(search)
+    );
+
+    const totalEl = document.getElementById('contactsTotalCount');
+    if (totalEl) totalEl.textContent = `${contactsData.length} kontak total`;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${contactsData.length === 0 ? 'Belum ada kontak. Klik "Tambah Nomor".' : 'Tidak ada kontak cocok.'}</td></tr>`;
+        updateContactSelectionBar();
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(c => {
+        const initial = (c.name || '?').charAt(0).toUpperCase();
+        const checked = selectedContacts.has(c.id) ? 'checked' : '';
+        const phoneDisplay = (c.phone || '').length > 8
+            ? c.phone.slice(0, 5) + '****' + c.phone.slice(-3)
+            : c.phone;
+        return `<tr>
+            <td><input type="checkbox" class="contact-checkbox" value="${c.id}" ${checked} onchange="toggleContact(${c.id})"></td>
+            <td>
+                <div class="group-name-cell">
+                    <div class="group-avatar">${escapeHtml(initial)}</div>
+                    <span>${escapeHtml(c.name)}</span>
+                </div>
+            </td>
+            <td style="font-family:monospace;font-size:13px">${escapeHtml(phoneDisplay)}</td>
+            <td>${c.label ? `<span class="faq-badge" style="font-size:11px">${escapeHtml(c.label)}</span>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}</td>
+            <td style="display:flex;gap:6px;justify-content:flex-end">
+                <button class="btn-outline-sm" onclick="openEditContactModal(${c.id})" title="Edit">✏️</button>
+                <button class="btn-danger-sm" onclick="removeContact(${c.id})">Hapus</button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    updateContactSelectionBar();
+}
+
+function filterContacts() { renderContacts(); }
+
+function toggleContact(id) {
+    if (selectedContacts.has(id)) selectedContacts.delete(id);
+    else selectedContacts.add(id);
+    updateContactSelectionBar();
+    const allIds = contactsData.map(c => c.id);
+    document.getElementById('selectAllContacts').checked = allIds.every(id => selectedContacts.has(id));
+}
+
+function toggleSelectAllContacts() {
+    const checked = document.getElementById('selectAllContacts').checked;
+    if (checked) contactsData.forEach(c => selectedContacts.add(c.id));
+    else selectedContacts.clear();
+    renderContacts();
+}
+
+function updateContactSelectionBar() {
+    const bar = document.getElementById('contactSelectionBar');
+    const count = selectedContacts.size;
+    const el = document.getElementById('contactSelectedCount');
+    if (el) el.textContent = count;
+    if (bar) bar.classList.toggle('visible', count > 0);
+}
+
+function blastSelectedContacts() {
+    if (selectedContacts.size === 0) return;
+    navigateTo('blast');
+    setTimeout(() => {
+        const tab = document.querySelector('#page-blast .faq-tab:nth-child(2)');
+        if (tab) switchBlastTab('personal', tab);
+        openNewCampaignModal();
+    }, 100);
+}
+
+// ============ CONTACT MODAL ============
+function openAddContactModal() {
+    document.getElementById('contactEditId').value = '';
+    document.getElementById('contactName').value = '';
+    document.getElementById('contactPhone').value = '';
+    document.getElementById('contactLabel').value = '';
+    document.getElementById('contactModalTitle').textContent = 'Tambah Nomor';
+    document.getElementById('contactModalBtn').textContent = 'Tambah Nomor';
+    updateContactPreview();
+    document.getElementById('contactModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('contactName').focus(), 100);
+}
+
+function openEditContactModal(id) {
+    const c = contactsData.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('contactEditId').value = id;
+    document.getElementById('contactName').value = c.name || '';
+    document.getElementById('contactPhone').value = c.phone || '';
+    document.getElementById('contactLabel').value = c.label || '';
+    document.getElementById('contactModalTitle').textContent = 'Edit Kontak';
+    document.getElementById('contactModalBtn').textContent = 'Simpan Perubahan';
+    updateContactPreview();
+    document.getElementById('contactModal').style.display = 'flex';
+}
+
+function closeContactModal() {
+    document.getElementById('contactModal').style.display = 'none';
+}
+
+function handleContactModalOverlay(e) {
+    if (e.target === document.getElementById('contactModal')) closeContactModal();
+}
+
+function submitContact() {
+    const editId = document.getElementById('contactEditId').value;
+    const name = (document.getElementById('contactName').value || '').trim();
+    const phone = (document.getElementById('contactPhone').value || '').trim();
+    const label = (document.getElementById('contactLabel').value || '').trim();
+
+    if (!name) { showToast('Validasi', 'Nama harus diisi', '⚠️'); return; }
+    if (!phone) { showToast('Validasi', 'Nomor WA harus diisi', '⚠️'); return; }
+
+    if (editId) {
+        socket.emit('edit-contact', { id: parseInt(editId), name, phone, label });
+        showToast('Kontak diperbarui', name, '✅');
+    } else {
+        socket.emit('add-contact', { name, phone, label });
+        showToast('Kontak ditambahkan', name, '✅');
+    }
+    closeContactModal();
+}
+
+function removeContact(id) {
+    const c = contactsData.find(x => x.id === id);
+    if (confirm(`Hapus kontak "${c?.name || ''}"?`)) {
+        socket.emit('remove-contact', id);
+        selectedContacts.delete(id);
+    }
+}
+
+// ============ CAMPAIGN (BLAST PERSONAL) ============
+function renderCampaignStats() {
+    const total = campaignsData.length;
+    const scheduled = campaignsData.filter(c => c.status === 'scheduled').length;
+    const done = campaignsData.filter(c => c.status === 'done').length;
+    const recipients = campaignsData.reduce((s, c) => s + (c.sentCount || 0), 0);
+
+    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    el('bpTotal', total);
+    el('bpScheduled', scheduled);
+    el('bpDone', done);
+    el('bpRecipients', recipients);
+
+    const info = document.getElementById('bpCountInfo');
+    if (info) info.textContent = total > 0 ? `Menampilkan ${total} blasting` : '';
+}
+
+function renderCampaigns() {
+    const tbody = document.getElementById('campaignTableBody');
+    if (!tbody) return;
+
+    const search = (document.getElementById('campaignSearch')?.value || '').toLowerCase();
+    const filtered = search
+        ? campaignsData.filter(c => (c.name || '').toLowerCase().includes(search))
+        : campaignsData;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${campaignsData.length === 0 ? 'Belum ada blasting. Klik "Buat Blasting Baru".' : 'Tidak ada blasting cocok.'}</td></tr>`;
+        return;
+    }
+
+    const statusBadge = (s) => {
+        const map = {
+            running:   '<span class="camp-badge camp-running">⏳ Berjalan</span>',
+            done:      '<span class="camp-badge camp-done">✅ Selesai</span>',
+            scheduled: '<span class="camp-badge camp-scheduled">⏰ Terjadwal</span>',
+            failed:    '<span class="camp-badge camp-failed">❌ Gagal</span>',
+        };
+        return map[s] || `<span class="camp-badge">${s}</span>`;
+    };
+
+    tbody.innerHTML = filtered.map(c => {
+        const created = c.createdAt ? new Date(c.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+        const schedule = c.scheduledAt
+            ? new Date(c.scheduledAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : 'Terkirim langsung';
+        const labelBadge = c.targetLabel
+            ? `<span class="faq-badge" style="font-size:11px">${escapeHtml(c.targetLabel)}</span>`
+            : '<span style="color:var(--text-muted);font-size:12px">Semua</span>';
+        const progress = c.status === 'running' && c.totalTarget > 0
+            ? `<div class="camp-progress-bar"><div class="camp-progress-fill" style="width:${Math.round((c.sentCount/c.totalTarget)*100)}%"></div></div>`
+            : '';
+
+        return `<tr>
+            <td>
+                <div style="font-weight:600;font-size:13px">${escapeHtml(c.name)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Dibuat ${created}</div>
+                ${progress}
+            </td>
+            <td>${labelBadge}</td>
+            <td style="font-size:12px;color:var(--text-muted)">${escapeHtml(schedule)}</td>
+            <td>${statusBadge(c.status)}</td>
+            <td style="text-align:center;font-weight:600;font-size:14px">${c.sentCount || 0}${c.totalTarget ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted)"> /${c.totalTarget}</span>` : ''}</td>
+            <td style="text-align:center">
+                <div style="display:flex;gap:6px;justify-content:center">
+                    ${c.status !== 'running' ? `<button class="btn-outline-sm" onclick="rerunCampaign(${c.id})" title="Kirim Ulang">▶</button>` : ''}
+                    <button class="btn-danger-sm" onclick="deleteCampaign(${c.id})">🗑</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function rerunCampaign(id) {
+    if (!confirm('Kirim ulang blasting ini?')) return;
+    socket.emit('run-campaign', id);
+    showToast('Blast diulang', 'Proses pengiriman dimulai...', '🔄');
+}
+
+function deleteCampaign(id) {
+    const c = campaignsData.find(x => x.id === id);
+    if (c?.status === 'running') { showToast('Tidak bisa dihapus', 'Blasting sedang berjalan', '⚠️'); return; }
+    if (confirm(`Hapus blasting "${c?.name || ''}"?`)) socket.emit('delete-campaign', id);
+}
+
+// ============ CAMPAIGN MODAL ============
+function openNewCampaignModal() {
+    cmSelectedLabel = null;
+    document.getElementById('cmName').value = '';
+    document.getElementById('cmMessage').value = '';
+    document.getElementById('cmCharCount').textContent = '0';
+    document.querySelector('input[name="cmSpeed"][value="8000"]').checked = true;
+    document.querySelector('input[name="cmSchedule"][value="now"]').checked = true;
+    document.getElementById('cmScheduleTimeWrap').style.display = 'none';
+    renderCampaignLabelGrid();
+
+    document.getElementById('campaignStep1').style.display = 'block';
+    document.getElementById('campaignStep2').style.display = 'none';
+    document.getElementById('cmStepDot1').classList.add('active');
+    document.getElementById('cmStepDot2').classList.remove('active');
+    document.getElementById('campaignModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('cmName').focus(), 100);
+}
+
+function closeCampaignModal() {
+    document.getElementById('campaignModal').style.display = 'none';
+}
+
+function handleCampaignModalOverlay(e) {
+    if (e.target === document.getElementById('campaignModal')) closeCampaignModal();
+}
+
+function renderCampaignLabelGrid() {
+    const grid = document.getElementById('cmLabelGrid');
+    if (!grid) return;
+    const allLabels = [...new Set(contactsData.map(c => c.label).filter(Boolean))].sort();
+    const allCount = contactsData.length;
+
+    let html = `<div class="cm-label-chip ${cmSelectedLabel === null ? 'active' : ''}" onclick="selectCampaignLabel(null)">
+        <div class="cm-label-chip-name">Semua Kontak</div>
+        <div class="cm-label-chip-count">${allCount} kontak</div>
+    </div>`;
+
+    html += allLabels.map(l => {
+        const cnt = contactsData.filter(c => c.label === l).length;
+        return `<div class="cm-label-chip ${cmSelectedLabel === l ? 'active' : ''}" onclick="selectCampaignLabel('${escapeHtml(l)}')">
+            <div class="cm-label-chip-name">${escapeHtml(l)}</div>
+            <div class="cm-label-chip-count">${cnt} kontak</div>
+        </div>`;
+    }).join('');
+
+    if (allLabels.length === 0) {
+        html += `<div style="font-size:12px;color:var(--text-muted);padding:8px;grid-column:1/-1">
+            Belum ada label. <a href="#" onclick="navigateTo('contacts');closeCampaignModal();return false;" style="color:var(--primary)">Tambah kontak dengan label</a>
+        </div>`;
+    }
+
+    grid.innerHTML = html;
+}
+
+function selectCampaignLabel(label) {
+    cmSelectedLabel = label;
+    renderCampaignLabelGrid();
+}
+
+function campaignNextStep() {
+    const name = (document.getElementById('cmName').value || '').trim();
+    const msg = (document.getElementById('cmMessage').value || '').trim();
+    if (!name) { showToast('Validasi', 'Nama blasting harus diisi', '⚠️'); return; }
+    if (!msg) { showToast('Validasi', 'Pesan blast harus diisi', '⚠️'); return; }
+
+    document.getElementById('campaignStep1').style.display = 'none';
+    document.getElementById('campaignStep2').style.display = 'block';
+    document.getElementById('cmStepDot1').classList.remove('active');
+    document.getElementById('cmStepDot2').classList.add('active');
+}
+
+function campaignPrevStep() {
+    document.getElementById('campaignStep2').style.display = 'none';
+    document.getElementById('campaignStep1').style.display = 'block';
+    document.getElementById('cmStepDot2').classList.remove('active');
+    document.getElementById('cmStepDot1').classList.add('active');
+}
+
+function toggleCampaignSchedule() {
+    const val = document.querySelector('input[name="cmSchedule"]:checked')?.value;
+    document.getElementById('cmScheduleTimeWrap').style.display = val === 'later' ? 'block' : 'none';
+    const nowCard = document.getElementById('cmSchedNowCard');
+    const laterCard = document.getElementById('cmSchedLaterCard');
+    if (nowCard) nowCard.style.borderColor = val === 'now' ? 'var(--primary)' : 'var(--border)';
+    if (laterCard) laterCard.style.borderColor = val === 'later' ? 'var(--primary)' : 'var(--border)';
+}
+
+function submitCampaign() {
+    const name = (document.getElementById('cmName').value || '').trim();
+    const message = (document.getElementById('cmMessage').value || '').trim();
+    const speedDelay = parseInt(document.querySelector('input[name="cmSpeed"]:checked')?.value || '8000');
+    const scheduleMode = document.querySelector('input[name="cmSchedule"]:checked')?.value || 'now';
+    const scheduledAt = scheduleMode === 'later'
+        ? (document.getElementById('cmScheduleTime').value ? new Date(document.getElementById('cmScheduleTime').value).toISOString() : null)
+        : null;
+
+    if (scheduleMode === 'later' && !scheduledAt) {
+        showToast('Validasi', 'Pilih waktu penjadwalan', '⚠️');
+        return;
+    }
+
+    const targetLabel = cmSelectedLabel;
+    const count = targetLabel ? contactsData.filter(c => c.label === targetLabel).length : contactsData.length;
+    if (count === 0) {
+        showToast('Tidak ada penerima', 'Tambah kontak terlebih dahulu di halaman Kontak', '⚠️');
+        return;
+    }
+
+    const label = targetLabel ? `label "${targetLabel}"` : 'semua kontak';
+
+    // Tutup modal dulu agar confirm() tidak tertutup backdrop blur
+    closeCampaignModal();
+    setTimeout(() => {
+        if (!confirm(`Mulai blasting "${name}" ke ${count} kontak (${label})?`)) return;
+        socket.emit('create-campaign', { name, message, targetLabel, speedDelay, scheduledAt });
+    }, 180);
+}
+
+// ============ MONITORING CHAT ============
+function getLabelChipHtml(label) {
+    if (!label) return '';
+    const colors = [
+        'background:rgba(99,102,241,.15);color:#a78bfa',
+        'background:rgba(239,68,68,.13);color:#f87171',
+        'background:rgba(245,158,11,.13);color:#fbbf24',
+        'background:rgba(16,185,129,.13);color:#34d399',
+        'background:rgba(59,130,246,.13);color:#60a5fa',
+        'background:rgba(236,72,153,.13);color:#f472b6',
+    ];
+    let h = 0;
+    for (let i = 0; i < label.length; i++) h = label.charCodeAt(i) + ((h << 5) - h);
+    const s = colors[Math.abs(h) % colors.length];
+    return `<span class="mc-chip" style="${s}">${escapeHtml(label)}</span>`;
+}
+
+function renderConvList() {
+    const container = document.getElementById('monitorConvList');
+    if (!container) return;
+
+    const search = (document.getElementById('monitorSearch')?.value || '').toLowerCase();
+    const labelFilter = document.getElementById('monitorLabelFilter')?.value || 'all';
+
+    const convArr = Object.values(conversationsData)
+        .sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1);
+
+    // Update stats
+    const allIds = new Set(convArr.map(c => c.id));
+    const contactedCount = convArr.length;
+    const pendingCount = contactsData.filter(c => !allIds.has(c.id)).length;
+    const el1 = document.getElementById('monitorStatsContacted');
+    const el2 = document.getElementById('monitorStatsPending');
+    const el3 = document.getElementById('monitorPendingCount');
+    if (el1) el1.textContent = contactedCount;
+    if (el2) el2.textContent = pendingCount;
+    if (el3) el3.textContent = pendingCount;
+    const pendingRow = document.getElementById('monitorPendingRow');
+    if (pendingRow) pendingRow.style.display = pendingCount > 0 ? 'block' : 'none';
+
+    // Update label filter options
+    const labelSel = document.getElementById('monitorLabelFilter');
+    if (labelSel && labelSel.options.length <= 1) {
+        const labels = [...new Set(contactsData.map(c => c.label).filter(Boolean))];
+        labels.forEach(l => {
+            if (![...labelSel.options].some(o => o.value === l)) {
+                const opt = document.createElement('option');
+                opt.value = l; opt.textContent = l;
+                labelSel.appendChild(opt);
+            }
+        });
+    }
+
+    // Filter
+    let filtered = convArr;
+    if (search) filtered = filtered.filter(c =>
+        (c.name || '').toLowerCase().includes(search) ||
+        (c.lastMsg || '').toLowerCase().includes(search) ||
+        (c.phone || '').includes(search));
+    if (labelFilter !== 'all') {
+        const ids = new Set(contactsData.filter(c => c.label === labelFilter).map(c => c.id || c.phone));
+        filtered = filtered.filter(c => ids.has(c.id) || ids.has(c.phone));
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:28px 16px;font-size:13px">Belum ada percakapan masuk.</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(c => {
+        const initial = (c.name || '?').charAt(0).toUpperCase();
+        const isSelected = c.id === selectedConvId;
+        const isBlocked = blockedData.some(b => b.id === c.id);
+        const isHandover = state && state.handoverUsers && state.handoverUsers[c.id];
+        const time = c.lastTime ? formatConvTime(c.lastTime) : '';
+        const unread = c.unread > 0 ? `<span class="mc-unread-badge">${c.unread}</span>` : '';
+        // Find contact label
+        const contact = contactsData.find(ct => ct.id === c.id || ct.phone === c.phone);
+        const labelChip = contact?.label ? getLabelChipHtml(contact.label) : '';
+        const csChip = isHandover
+            ? `<span class="mc-chip mc-chip-cs">CS</span>`
+            : `<span class="mc-chip mc-chip-bot">Bot</span>`;
+        const blockedChip = isBlocked ? `<span class="mc-chip mc-chip-block">Diblokir</span>` : '';
+
+        return `<div class="mc-conv-item ${isSelected ? 'active' : ''} ${isBlocked ? 'mc-conv-blocked' : ''}" onclick="selectConversation('${c.id}')">
+            <div class="mc-conv-avatar">${escapeHtml(initial)}</div>
+            <div class="mc-conv-body">
+                <div class="mc-conv-top">
+                    <span class="mc-conv-name">${escapeHtml(c.name || c.id)}</span>
+                    <span class="mc-conv-time">${time}</span>
+                </div>
+                <div class="mc-conv-tags">${csChip}${labelChip}${blockedChip}</div>
+                <div class="mc-conv-preview">
+                    <span class="mc-conv-lastmsg">${escapeHtml((c.lastMsg || 'Belum ada pesan').substring(0, 50))}</span>
+                    ${unread}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterConversations() { renderConvList(); }
+
+function selectConversation(userId) {
+    selectedConvId = userId;
+    renderConvList();
+    socket.emit('get-conversation', userId);
+}
+
+function openConversation(userId) {
+    const conv = conversationsData[userId];
+    if (!conv) return;
+
+    document.getElementById('mcEmpty').style.display = 'none';
+    document.getElementById('mcChatView').style.display = 'flex';
+
+    const initial = (conv.name || '?').charAt(0).toUpperCase();
+    document.getElementById('mcAvatar').textContent = initial;
+    document.getElementById('mcName').textContent = conv.name || userId;
+
+    const phoneEl = document.getElementById('mcPhone');
+    if (phoneEl) phoneEl.textContent = conv.phone || userId;
+
+    const csEl = document.getElementById('mcCsAgent');
+    if (csEl) csEl.textContent = conv.isHandover ? 'CS Agt: Admin' : 'CS Agt: Bot';
+
+    renderChatMessages(conv.messages || []);
+    scrollChatToBottom();
+    const input = document.getElementById('mcReplyInput');
+    if (input) input.focus();
+}
+
+function filterPendingContacts(e) {
+    if (e) e.preventDefault();
+    const allIds = new Set(Object.keys(conversationsData));
+    // highlight contacts not yet in conv — navigate to Kontak page with filter
+    navigateTo('contacts');
+    setTimeout(() => {
+        const searchEl = document.getElementById('contactSearch');
+        if (searchEl) { searchEl.value = ''; }
+        showToast('Filter Aktif', 'Menampilkan kontak yang belum dihubungi', 'ℹ️');
+    }, 100);
+}
+
+function renderChatMessages(messages) {
+    const container = document.getElementById('mcMessages');
+    if (!container) return;
+
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:40px">Belum ada pesan dalam percakapan ini.</div>';
+        return;
+    }
+
+    let html = '';
+    let lastDate = '';
+    messages.forEach(msg => {
+        const d = new Date(msg.time);
+        const dateStr = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        if (dateStr !== lastDate) {
+            html += `<div class="mc-date-divider"><span>${dateStr}</span></div>`;
+            lastDate = dateStr;
+        }
+        const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const isBot = msg.from === 'bot';
+        html += `<div class="mc-msg-row ${isBot ? 'mc-msg-bot' : 'mc-msg-user'}">
+            <div class="mc-bubble ${isBot ? 'mc-bubble-bot' : 'mc-bubble-user'}">
+                <div class="mc-bubble-text">${escapeHtml(msg.content)}</div>
+                <div class="mc-bubble-time">${timeStr}</div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function appendChatMessage(msg) {
+    if (!msg) return;
+    const container = document.getElementById('mcMessages');
+    if (!container) return;
+    const d = new Date(msg.time);
+    const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const isBot = msg.from === 'bot';
+    const div = document.createElement('div');
+    div.className = `mc-msg-row ${isBot ? 'mc-msg-bot' : 'mc-msg-user'}`;
+    div.innerHTML = `<div class="mc-bubble ${isBot ? 'mc-bubble-bot' : 'mc-bubble-user'}">
+        <div class="mc-bubble-text">${escapeHtml(msg.content)}</div>
+        <div class="mc-bubble-time">${timeStr}</div>
+    </div>`;
+    container.appendChild(div);
+}
+
+function scrollChatToBottom() {
+    const container = document.getElementById('mcMessages');
+    if (container) setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+}
+
+function sendCsReply() {
+    const input = document.getElementById('mcReplyInput');
+    const msg = (input?.value || '').trim();
+    if (!msg || !selectedConvId) return;
+    const btn = document.getElementById('mcSendBtn');
+    if (btn) btn.disabled = true;
+    socket.emit('send-cs-reply', { userId: selectedConvId, message: msg });
+}
+
+function blockCurrentContact() {
+    if (!selectedConvId) return;
+    const conv = conversationsData[selectedConvId];
+    if (!conv) return;
+    if (!confirm(`Blokir kontak "${conv.name || selectedConvId}"? Pesan dari nomor ini tidak akan diproses bot.`)) return;
+    socket.emit('block-contact', { id: selectedConvId, name: conv.name, phone: conv.phone, reason: 'Diblokir dari Monitoring Chat' });
+    showToast('Kontak diblokir', conv.name || selectedConvId, '🚫');
+    renderConvList();
+}
+
+function formatConvTime(isoStr) {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (diffDays === 1) return 'Kemarin';
+    if (diffDays < 7) return d.toLocaleDateString('id-ID', { weekday: 'short' });
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+// ============ BLOCKED CONTACTS ============
+function renderBlocked() {
+    const tbody = document.getElementById('blockedTableBody');
+    if (!tbody) return;
+
+    const search = (document.getElementById('blockedSearch')?.value || '').toLowerCase();
+    const filtered = search
+        ? blockedData.filter(c => (c.name || '').toLowerCase().includes(search) || (c.phone || '').includes(search))
+        : blockedData;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${blockedData.length === 0 ? 'Belum ada kontak yang diblokir.' : 'Tidak ditemukan.'}</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(c =>
+        `<tr>
+            <td><strong>${escapeHtml(c.name || '—')}</strong></td>
+            <td style="font-family:monospace;font-size:13px">${escapeHtml(c.phone || c.id)}</td>
+            <td style="font-size:13px;color:var(--text-muted)">${escapeHtml(c.blockedAt || '—')}</td>
+            <td style="font-size:13px;color:var(--text-muted)">${escapeHtml(c.reason || '—')}</td>
+            <td>
+                <button class="btn btn-secondary btn-sm" onclick="unblockContact('${c.id}')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+                    Buka Blokir
+                </button>
+            </td>
+        </tr>`
+    ).join('');
+}
+
+function filterBlocked() { renderBlocked(); }
+
+function unblockContact(id) {
+    const c = blockedData.find(x => x.id === id);
+    if (confirm(`Buka blokir "${c?.name || id}"?`)) {
+        socket.emit('unblock-contact', id);
+        showToast('Blokir dibuka', c?.name || id, '✅');
+    }
 }

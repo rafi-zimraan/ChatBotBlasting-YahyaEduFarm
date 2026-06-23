@@ -4,6 +4,30 @@ const config = require('./config');
 const utils = require('./utils');
 const handlers = require('./handlers');
 
+const buildConvList = () => {
+    return Object.values(state.conversations)
+        .sort((a, b) => (b.lastTime || '') > (a.lastTime || '') ? 1 : -1)
+        .map(c => ({ id: c.id, name: c.name, phone: c.phone, lastMsg: c.lastMsg, lastTime: c.lastTime, unread: c.unread || 0 }));
+};
+
+const recordMsg = (userId, name, content, isBot = false) => {
+    if (!state.conversations[userId]) {
+        state.conversations[userId] = { id: userId, name: name || userId, phone: userId, messages: [], lastMsg: '', lastTime: null, unread: 0 };
+    }
+    const conv = state.conversations[userId];
+    if (name && name !== userId && !isBot) conv.name = name;
+    const msg = { from: isBot ? 'bot' : 'user', content: content || '', time: new Date().toISOString() };
+    conv.messages.push(msg);
+    if (conv.messages.length > 150) conv.messages = conv.messages.slice(-150);
+    conv.lastMsg = (content || '').substring(0, 80);
+    conv.lastTime = msg.time;
+    if (!isBot) conv.unread = (conv.unread || 0) + 1;
+    if (state.io) {
+        state.io.emit('conv-update', { id: userId, conv: { ...conv, messages: conv.messages.slice(-20) } });
+        state.io.emit('conv-list-update', buildConvList());
+    }
+};
+
 const trackAnalytics = (type) => {
     const today = new Date().toISOString().slice(0, 10);
     if (!state.analytics[today]) state.analytics[today] = { private: 0, groupFaq: 0, blasts: 0 };
@@ -29,6 +53,7 @@ const trackNewUser = (senderId, senderName) => {
 };
 
 const processMessage = async (message, senderId, senderName, text) => {
+    if ((state.blockedContacts || []).some(b => b.id === senderId)) return;
     trackNewUser(senderId, senderName);
     if (utils.isSpam(senderId)) return;
 
@@ -185,6 +210,7 @@ client.on('message', async (message) => {
             const nama = contact.name || contact.pushname || 'Unknown';
             const preview = (message.body || '').substring(0, 80);
             console.log(`[DM] ${nama} (${message.from}): ${preview}${message.body?.length > 80 ? '...' : ''}`);
+            recordMsg(contact.id.user, nama, message.body || '');
             await processMessage(message, contact.id.user, nama, message.body);
         }
     } catch (err) {
@@ -193,6 +219,19 @@ client.on('message', async (message) => {
             await message.reply('Mohon maaf, terjadi kendala teknis. Silakan coba beberapa saat lagi.');
         } catch (e) {}
     }
+});
+
+// Track outgoing bot messages for Monitoring Chat
+client.on('message_create', async (msg) => {
+    try {
+        if (!msg.fromMe) return;
+        if (!msg.to || msg.to.endsWith('@g.us') || msg.to.endsWith('@broadcast')) return;
+        const userId = msg.to.replace('@c.us', '').replace('@lid', '');
+        if (userId === (state.botOwnId || '')) return;
+        const content = msg.body || '';
+        if (!content) return;
+        recordMsg(userId, state.conversations[userId]?.name || userId, content, true);
+    } catch (e) {}
 });
 
 module.exports = { processMessage, trackAnalytics };

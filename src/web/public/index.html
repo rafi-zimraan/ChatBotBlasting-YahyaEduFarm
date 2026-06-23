@@ -31,6 +31,10 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Dashboard
                 </button>
+                <button class="nav-item" data-page="monitoring">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Monitoring Chat
+                </button>
                 <button class="nav-item" data-page="groups">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     Groups
@@ -47,9 +51,17 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>
                     FAQ Bot
                 </button>
+                <button class="nav-item" data-page="contacts">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Kontak
+                </button>
                 <button class="nav-item" data-page="donors">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     Donatur
+                </button>
+                <button class="nav-item" data-page="blocked">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    Kontak Diblokir
                 </button>
             </nav>
             <div class="sidebar-footer">
@@ -257,6 +269,92 @@
                     </div>
                 </section>
 
+                <!-- MONITORING CHAT -->
+                <section class="page" id="page-monitoring">
+                    <div class="monitor-layout">
+                        <!-- LEFT SIDEBAR -->
+                        <div class="monitor-sidebar">
+                            <div class="monitor-sidebar-header">
+                                <span class="monitor-sidebar-title">Monitoring Chat</span>
+                                <button class="btn btn-primary btn-sm" onclick="openAddContactModal()">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Tambah Nomor
+                                </button>
+                            </div>
+                            <div class="monitor-search-wrap">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                <input type="text" id="monitorSearch" placeholder="Cari nama / pesan..." oninput="filterConversations()">
+                            </div>
+                            <div class="monitor-label-row">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                <select id="monitorLabelFilter" onchange="filterConversations()">
+                                    <option value="all">Label</option>
+                                </select>
+                            </div>
+                            <div class="monitor-stats-row">
+                                <span><span id="monitorStatsContacted">0</span> sudah dihubungi</span>
+                                <span class="monitor-stats-sep">|</span>
+                                <span><span id="monitorStatsPending">0</span> belum</span>
+                            </div>
+                            <div class="monitor-pending-row" id="monitorPendingRow" style="display:none">
+                                <a href="#" onclick="filterPendingContacts(event)">Tampilkan <span id="monitorPendingCount">0</span> yang belum</a>
+                            </div>
+                            <div class="monitor-conv-list" id="monitorConvList">
+                                <div class="empty-state" style="padding:28px 16px;font-size:13px">Belum ada percakapan masuk.</div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT CHAT PANEL -->
+                        <div class="monitor-chat-panel" id="monitorChatPanel">
+                            <div class="mc-empty" id="mcEmpty">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <p>Pilih percakapan untuk memulai monitoring</p>
+                            </div>
+                            <div class="mc-chat-view" id="mcChatView" style="display:none">
+                                <div class="mc-header">
+                                    <div class="mc-header-left">
+                                        <div class="mc-avatar" id="mcAvatar">?</div>
+                                        <div class="mc-contact-info">
+                                            <div class="mc-name" id="mcName">—</div>
+                                            <div class="mc-meta">
+                                                <span id="mcPhone">—</span>
+                                                <span class="mc-meta-dot">·</span>
+                                                <span class="mc-cs-label" id="mcCsAgent">CS Agt: Bot</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mc-header-actions">
+                                        <button class="btn btn-secondary btn-sm" onclick="blockCurrentContact()" id="mcBlockBtn">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                            Blokir
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm mc-menu-btn">
+                                            Menu
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mc-messages" id="mcMessages"></div>
+                                <div class="mc-reply-bar">
+                                    <button class="mc-icon-btn" title="Lampiran">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                    </button>
+                                    <button class="mc-icon-btn" title="Template">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    </button>
+                                    <button class="mc-icon-btn" title="Voice note">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                                    </button>
+                                    <input type="text" id="mcReplyInput" class="mc-reply-input" placeholder="Balas manual sebagai CS..." onkeydown="if(event.key==='Enter')sendCsReply()">
+                                    <button class="btn btn-primary mc-send-btn" onclick="sendCsReply()" id="mcSendBtn">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- GROUPS -->
                 <section class="page" id="page-groups">
                     <div class="page-header">
@@ -292,58 +390,128 @@
 
                 <!-- BLAST -->
                 <section class="page" id="page-blast">
-                    <div class="blast-composer">
-                        <div class="composer-header">
-                            <h3>Compose Pesan</h3>
-                        </div>
-                        <div class="target-selector">
-                            <label class="radio-group">
-                                <input type="radio" name="blastTarget" value="all" checked onchange="toggleBlastTarget()">
-                                <span>Semua Grup</span>
-                            </label>
-                            <label class="radio-group">
-                                <input type="radio" name="blastTarget" value="selected" onchange="toggleBlastTarget()">
-                                <span>Grup Tertentu</span>
-                            </label>
-                        </div>
-                        <div class="selected-groups-info" id="selectedGroupsInfo" style="display:none">
-                            <span id="blastSelectedCount">0 grup dipilih</span>
-                            <button class="btn btn-link" onclick="navigateTo('groups')">Pilih Grup</button>
-                        </div>
-                        <textarea id="blastMessage" placeholder="Tulis pesan yang ingin dikirim ke grup..." rows="6"></textarea>
-                        <div class="char-counter"><span id="charCount">0</span> karakter</div>
-                        <div class="blast-media-upload">
-                            <label class="blast-media-label" id="blastMediaLabel">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                <span id="blastMediaText">Lampirkan gambar/PDF/video</span>
-                                <input type="file" id="blastMediaInput" accept="image/*,video/*,application/pdf" onchange="onBlastMediaSelect(this)" hidden>
-                            </label>
-                            <div class="blast-media-preview" id="blastMediaPreview" style="display:none">
-                                <span id="blastMediaName"></span>
-                                <button class="btn-danger-sm" onclick="removeBlastMedia()">Hapus</button>
+                    <div class="faq-tabs">
+                        <button class="faq-tab active" onclick="switchBlastTab('group', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Blast Grup
+                        </button>
+                        <button class="faq-tab" onclick="switchBlastTab('personal', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Blast Personal
+                        </button>
+                    </div>
+
+                    <!-- BLAST GRUP PANEL -->
+                    <div id="blast-panel-group">
+                        <div class="blast-composer">
+                            <div class="composer-header">
+                                <h3>Compose Pesan — Grup</h3>
+                            </div>
+                            <div class="target-selector">
+                                <label class="radio-group">
+                                    <input type="radio" name="blastTarget" value="all" checked onchange="toggleBlastTarget()">
+                                    <span>Semua Grup</span>
+                                </label>
+                                <label class="radio-group">
+                                    <input type="radio" name="blastTarget" value="selected" onchange="toggleBlastTarget()">
+                                    <span>Grup Tertentu</span>
+                                </label>
+                            </div>
+                            <div class="selected-groups-info" id="selectedGroupsInfo" style="display:none">
+                                <span id="blastSelectedCount">0 grup dipilih</span>
+                                <button class="btn btn-link" onclick="navigateTo('groups')">Pilih Grup</button>
+                            </div>
+                            <textarea id="blastMessage" placeholder="Tulis pesan yang ingin dikirim ke grup..." rows="6"></textarea>
+                            <div class="char-counter"><span id="charCount">0</span> karakter</div>
+                            <div class="blast-media-upload">
+                                <label class="blast-media-label" id="blastMediaLabel">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    <span id="blastMediaText">Lampirkan gambar/PDF/video</span>
+                                    <input type="file" id="blastMediaInput" accept="image/*,video/*,application/pdf" onchange="onBlastMediaSelect(this)" hidden>
+                                </label>
+                                <div class="blast-media-preview" id="blastMediaPreview" style="display:none">
+                                    <span id="blastMediaName"></span>
+                                    <button class="btn-danger-sm" onclick="removeBlastMedia()">Hapus</button>
+                                </div>
+                            </div>
+                            <div class="composer-actions">
+                                <button class="btn btn-primary btn-lg" onclick="executeBlast()" id="sendBlastBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                    Kirim Blast
+                                </button>
                             </div>
                         </div>
-                        <div class="composer-actions">
-                            <button class="btn btn-primary btn-lg" onclick="executeBlast()" id="sendBlastBtn">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                                Kirim Blast
+                        <div class="progress-container" id="blastProgress" style="display:none">
+                            <div class="progress-header">
+                                <span>Mengirim blast...</span>
+                                <span id="progressText">0 / 0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-detail" id="progressDetail"></div>
+                        </div>
+                        <div class="blast-history">
+                            <h3>Riwayat Blast Grup</h3>
+                            <div id="blastHistory">
+                                <div class="empty-state">Belum ada riwayat blast.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLAST PERSONAL PANEL -->
+                    <div id="blast-panel-personal" style="display:none">
+                        <div class="bp-page-header">
+                            <div>
+                                <h3 style="margin:0 0 4px">Blasting Personal</h3>
+                                <p style="margin:0;font-size:13px;color:var(--text-muted)">Kirim pesan broadcast ke kontak personal berdasarkan label</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="openNewCampaignModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Buat Blasting Baru
                             </button>
                         </div>
-                    </div>
-                    <div class="progress-container" id="blastProgress" style="display:none">
-                        <div class="progress-header">
-                            <span>Mengirim blast...</span>
-                            <span id="progressText">0 / 0</span>
+
+                        <div class="bp-stats-grid">
+                            <div class="bp-stat-card">
+                                <div class="bp-stat-value" id="bpTotal">0</div>
+                                <div class="bp-stat-label">Total Blasting</div>
+                            </div>
+                            <div class="bp-stat-card">
+                                <div class="bp-stat-value bp-stat-orange" id="bpScheduled">0</div>
+                                <div class="bp-stat-label">Terjadwal</div>
+                            </div>
+                            <div class="bp-stat-card">
+                                <div class="bp-stat-value bp-stat-green" id="bpDone">0</div>
+                                <div class="bp-stat-label">Blasting Selesai</div>
+                            </div>
+                            <div class="bp-stat-card">
+                                <div class="bp-stat-value bp-stat-blue" id="bpRecipients">0</div>
+                                <div class="bp-stat-label">Total Penerima</div>
+                            </div>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
+
+                        <div class="bp-search-row">
+                            <input type="text" id="campaignSearch" class="bp-search-input" placeholder="Cari nama blasting..." oninput="renderCampaigns()">
+                            <span class="bp-count-info" id="bpCountInfo"></span>
                         </div>
-                        <div class="progress-detail" id="progressDetail"></div>
-                    </div>
-                    <div class="blast-history">
-                        <h3>Riwayat Blast</h3>
-                        <div id="blastHistory">
-                            <div class="empty-state">Belum ada riwayat blast.</div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Blasting</th>
+                                        <th>Label Target</th>
+                                        <th>Jadwal</th>
+                                        <th>Status</th>
+                                        <th style="text-align:center">Terkirim</th>
+                                        <th style="text-align:center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campaignTableBody">
+                                    <tr><td colspan="6" class="empty-state">Belum ada blasting. Klik "Buat Blasting Baru".</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -443,6 +611,83 @@
                     </div>
                 </section>
 
+                <!-- CONTACTS -->
+                <section class="page" id="page-contacts">
+                    <div class="page-header">
+                        <div class="search-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <input type="text" id="contactSearch" placeholder="Cari nama atau nomor..." oninput="filterContacts()">
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <select id="contactLabelFilter" class="faq-input" style="width:auto;padding:8px 12px" onchange="filterContacts()">
+                                <option value="all">Semua Label</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="openAddContactModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                                Tambah Nomor
+                            </button>
+                        </div>
+                    </div>
+                    <div class="contacts-stats-bar" id="contactsStatsBar">
+                        <span id="contactsTotalCount">0 kontak</span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllContacts" onchange="toggleSelectAllContacts()"></th>
+                                    <th>Nama</th>
+                                    <th>Nomor WA</th>
+                                    <th>Label</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTableBody">
+                                <tr><td colspan="5" class="empty-state">Belum ada kontak. Tambah nomor terlebih dahulu.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="selection-bar" id="contactSelectionBar">
+                        <span id="contactSelectedCount">0</span> kontak dipilih
+                        <button class="btn btn-primary btn-sm" onclick="blastSelectedContacts()">Blast ke yang dipilih</button>
+                    </div>
+                </section>
+
+                <!-- BLOCKED CONTACTS -->
+                <section class="page" id="page-blocked">
+                    <div class="blocked-page-header">
+                        <div class="blocked-title-wrap">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                            <div>
+                                <h2 style="margin:0 0 4px">Kontak Diblokir</h2>
+                                <p style="margin:0;font-size:13px;color:var(--text-muted)">Pesan dari nomor berikut tidak akan diterima sistem.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-header" style="margin-bottom:16px">
+                        <div class="search-box">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <input type="text" id="blockedSearch" placeholder="Cari nama atau nomor HP..." oninput="filterBlocked()">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Nomor</th>
+                                    <th>Waktu Blokir</th>
+                                    <th>Alasan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blockedTableBody">
+                                <tr><td colspan="5" class="empty-state">Belum ada kontak yang diblokir.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <!-- DONORS -->
                 <section class="page" id="page-donors">
                     <div class="donor-summary" id="donorSummary"></div>
@@ -529,6 +774,240 @@
     </div>
 
     <div id="toastContainer"></div>
+
+    <!-- Modal Tambah/Edit Kontak (2 kolom) -->
+    <div id="contactModal" class="qr-overlay" style="display:none;" onclick="handleContactModalOverlay(event)">
+        <div class="contact-modal-box">
+            <div class="qr-box-header">
+                <div class="qr-box-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    <span id="contactModalTitle">Tambah Nomor</span>
+                </div>
+                <button class="qr-box-close" onclick="closeContactModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="contact-modal-body">
+                <div class="contact-form-col">
+                    <input type="hidden" id="contactEditId">
+
+                    <div class="cm-section">
+                        <div class="cm-section-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                            Informasi Kontak
+                        </div>
+                        <div class="form-group">
+                            <label class="cm-label">Nama</label>
+                            <input type="text" id="contactName" placeholder="Contoh: Budi Santoso" class="faq-input cm-input" oninput="updateContactPreview()">
+                        </div>
+                        <div class="form-group">
+                            <label class="cm-label">Nomor WhatsApp</label>
+                            <input type="text" id="contactPhone" placeholder="Contoh: 628123456789 atau 0812..." class="faq-input cm-input" oninput="updateContactPreview()">
+                            <p class="cm-hint">Format: 628xxx atau 0812xxx (tanpa spasi / tanda hubung)</p>
+                        </div>
+                    </div>
+
+                    <div class="cm-section">
+                        <div class="cm-section-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                            Kategori Kontak
+                        </div>
+                        <div class="form-group">
+                            <label class="cm-label">Pilih Label <span style="color:var(--text-muted);font-weight:400">(Opsional)</span></label>
+                            <input type="text" id="contactLabel" placeholder="Contoh: pelanggan, donatur, alumni..." class="faq-input cm-input" oninput="updateContactPreview()" list="existingLabelsList">
+                            <datalist id="existingLabelsList"></datalist>
+                            <p class="cm-hint">Label membantu mengelompokkan kontak untuk blast tertarget</p>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+                        <button class="btn btn-secondary" onclick="closeContactModal()">Batal</button>
+                        <button class="btn btn-primary" onclick="submitContact()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                            <span id="contactModalBtn">Tambah Nomor</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="contact-preview-col">
+                    <div class="cm-preview-card">
+                        <div class="cm-preview-title">Preview Data</div>
+                        <div class="cm-preview-field">
+                            <div class="cm-preview-key">NAMA</div>
+                            <div class="cm-preview-val" id="previewName">—</div>
+                        </div>
+                        <div class="cm-preview-field">
+                            <div class="cm-preview-key">NOMOR HP</div>
+                            <div class="cm-preview-val" id="previewPhone">—</div>
+                        </div>
+                        <div class="cm-preview-field">
+                            <div class="cm-preview-key">LABEL</div>
+                            <div class="cm-preview-val" id="previewLabel">—</div>
+                        </div>
+                        <div class="cm-preview-field">
+                            <div class="cm-preview-key">FORMAT WA</div>
+                            <div class="cm-preview-val cm-preview-mono" id="previewWaId">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Buat Blasting Baru (2 langkah) -->
+    <div id="campaignModal" class="qr-overlay" style="display:none;" onclick="handleCampaignModalOverlay(event)">
+        <div class="campaign-modal-box">
+            <div class="qr-box-header">
+                <div class="qr-box-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                    Buat Blasting Baru
+                </div>
+                <button class="qr-box-close" onclick="closeCampaignModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- Step indicator -->
+            <div class="cm-steps">
+                <div class="cm-step active" id="cmStepDot1">
+                    <div class="cm-step-num">1</div>
+                    <div class="cm-step-label">Identitas & Pesan</div>
+                </div>
+                <div class="cm-step-line"></div>
+                <div class="cm-step" id="cmStepDot2">
+                    <div class="cm-step-num">2</div>
+                    <div class="cm-step-label">Pengiriman</div>
+                </div>
+            </div>
+
+            <!-- Step 1 -->
+            <div id="campaignStep1" style="padding:20px 24px">
+                <div class="cm-section">
+                    <div class="cm-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Identitas Blasting
+                    </div>
+                    <div class="form-group">
+                        <label class="cm-label">Nama Blasting <span style="color:var(--red)">*</span></label>
+                        <input type="text" id="cmName" placeholder="Contoh: Blasting Promo Ramadan 2026" class="faq-input cm-input">
+                    </div>
+                </div>
+
+                <div class="cm-section">
+                    <div class="cm-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Konten Pesan
+                    </div>
+                    <div class="form-group">
+                        <label class="cm-label">Pesan Blast <span style="color:var(--red)">*</span></label>
+                        <textarea id="cmMessage" placeholder="Tulis pesan broadcast yang akan dikirim ke kontak..." rows="5" class="cm-input" oninput="document.getElementById('cmCharCount').textContent=this.value.length" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:13px;resize:vertical"></textarea>
+                        <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:3px"><span id="cmCharCount">0</span> karakter</div>
+                    </div>
+                </div>
+
+                <div class="cm-section">
+                    <div class="cm-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Target &amp; Penerima
+                    </div>
+                    <label class="cm-label" style="margin-bottom:10px;display:block">Kategori Penerima <span style="color:var(--text-muted);font-weight:400">(klik untuk pilih)</span></label>
+                    <div class="cm-label-grid" id="cmLabelGrid">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <p class="cm-hint" style="margin-top:8px">Pilih satu label untuk filter penerima, atau biarkan kosong untuk kirim ke semua kontak</p>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px">
+                    <button class="btn btn-secondary" onclick="closeCampaignModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="campaignNextStep()">
+                        Lanjut
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div id="campaignStep2" style="display:none;padding:20px 24px">
+                <div class="cm-section">
+                    <div class="cm-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Kecepatan Blasting
+                    </div>
+                    <div class="cm-speed-options">
+                        <label class="cm-speed-opt">
+                            <input type="radio" name="cmSpeed" value="8000" checked>
+                            <div class="cm-speed-card">
+                                <div class="cm-speed-icon">🐢</div>
+                                <div class="cm-speed-name">Lambat</div>
+                                <div class="cm-speed-sub">~8 detik / pesan</div>
+                                <div class="cm-speed-tag safe">Paling aman</div>
+                            </div>
+                        </label>
+                        <label class="cm-speed-opt">
+                            <input type="radio" name="cmSpeed" value="5000">
+                            <div class="cm-speed-card">
+                                <div class="cm-speed-icon">🚶</div>
+                                <div class="cm-speed-name">Normal</div>
+                                <div class="cm-speed-sub">~5 detik / pesan</div>
+                                <div class="cm-speed-tag normal">Rekomendasi</div>
+                            </div>
+                        </label>
+                        <label class="cm-speed-opt">
+                            <input type="radio" name="cmSpeed" value="2000">
+                            <div class="cm-speed-card">
+                                <div class="cm-speed-icon">🏃</div>
+                                <div class="cm-speed-name">Cepat</div>
+                                <div class="cm-speed-sub">~2 detik / pesan</div>
+                                <div class="cm-speed-tag warn">Hati-hati</div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="cm-speed-warning">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Mengirim terlalu cepat dapat menyebabkan akun WhatsApp dibatasi oleh Meta. Disarankan maks. kecepatan Normal.
+                    </div>
+                </div>
+
+                <div class="cm-section">
+                    <div class="cm-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Waktu Pengiriman
+                    </div>
+                    <div class="cm-schedule-toggle">
+                        <label class="cm-schedule-opt">
+                            <input type="radio" name="cmSchedule" value="now" checked onchange="toggleCampaignSchedule()">
+                            <div class="cm-schedule-card" id="cmSchedNowCard">
+                                <div style="font-weight:600;font-size:14px">Kirim Sekarang</div>
+                                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Blasting langsung dimulai setelah tombol ditekan</div>
+                            </div>
+                        </label>
+                        <label class="cm-schedule-opt">
+                            <input type="radio" name="cmSchedule" value="later" onchange="toggleCampaignSchedule()">
+                            <div class="cm-schedule-card" id="cmSchedLaterCard">
+                                <div style="font-weight:600;font-size:14px">Jadwalkan</div>
+                                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Blasting dikirim pada waktu yang ditentukan</div>
+                            </div>
+                        </label>
+                    </div>
+                    <div id="cmScheduleTimeWrap" style="display:none;margin-top:12px">
+                        <label class="cm-label">Jadwalkan pada</label>
+                        <input type="datetime-local" id="cmScheduleTime" class="faq-input cm-input" style="width:auto">
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px">
+                    <button class="btn btn-secondary" onclick="campaignPrevStep()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        Kembali
+                    </button>
+                    <button class="btn btn-primary" onclick="submitCampaign()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        Mulai Blasting
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- QR Code Modal -->
     <div id="qrModal" class="qr-overlay" style="display:none;" onclick="handleQrOverlayClick(event)">
