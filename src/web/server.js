@@ -516,9 +516,11 @@ state.io.on('connection', (socket) => {
     });
 
     socket.on('add-schedule', (data) => {
-        const { time, message } = data;
-        const newId = state.scheduledBlasts.length + 1;
-        state.scheduledBlasts.push({ id: newId, time, message, enabled: true });
+        const { time, message, days } = data;
+        const newId = state.scheduledBlasts.length > 0
+            ? Math.max(...state.scheduledBlasts.map((j) => j.id)) + 1
+            : 1;
+        state.scheduledBlasts.push({ id: newId, time, days: Array.isArray(days) ? days : [], message, enabled: true });
         if (!state.blastSchedulerId) scheduler.startScheduler();
         state.io.emit('schedule-added', { schedules: state.scheduledBlasts });
         state.io.emit('status-update', {

@@ -63,19 +63,20 @@ Hanya dari chat sendiri (self-chat), bukan dari chat dengan bot. Admin tidak men
 
 ### Handover / CS Manusia
 
-Saat customer pilih menu *8 (Hubungi Admin)* atau ketik "mau bicara admin":
+Saat customer pilih menu *8 (Hubungi Admin)* atau ketik frasa seperti "admin", "cs", "hubungi admin", "mau bicara admin" (dideteksi via `utils.isAdminRequest`, dipakai sama persis baik di dalam maupun di luar jam kerja — lihat `bot.js`):
 1. Admin dapat **2 notifikasi WA berturut-turut** → muncul push notification di HP (ada suara)
    - Notif #1 (singkat): `🔔 Customer minta CS! 👤 Nama ⏰ Waktu` — muncul di lock screen
    - Notif #2 (detail): Nama, nomor, waktu, riwayat chat terakhir
-2. Customer direspon: **"Mohon tunggu sekitar 5-10 menit, admin akan menghubungi"**
+2. Customer direspon: **"Mohon tunggu, admin segera menghubungi Anda"**
+3. User masuk `state.handoverUsers` → bot **berhenti total** membalas user tersebut (cuma 1x pesan tunggu di percobaan pertama, setelahnya diam) sampai admin jalankan `!selesai <nomor>`.
 
-> Admin yang chat ke nomor bot dan mengetik "8" tidak mendapat notifikasi — hanya customer asli yang memicu notifikasi ke admin.
+> Admin yang chat ke nomor bot dan mengetik "8"/frasa admin tidak mendapat notifikasi — hanya customer asli yang memicu notifikasi ke admin.
 
 **FAQ Kustom:** `!faq list/add/hapus`, `!faqblast list/add/hapus`
 
 **Donatur:** `!donor list/add/hapus/total`
 
-**Blast & Groups:** `!groups` (list groups), `!blast <msg>` (send to all groups), `!blastjadwal HH:MM | <msg>` (schedule daily), `!blastjadwallist`, `!blastjadwalhapus <id>`, `!blaststop`
+**Blast & Groups:** `!groups` (list groups), `!blast <msg>` (send to all groups), `!blastjadwal [hari] HH:MM | <msg>` (schedule blast — tanpa `hari` = setiap hari; `hari` opsional pakai kode `sen/sel/rab/kam/jum/sab/min`, boleh gabung dengan koma mis. `jum,sab`), `!blastjadwallist`, `!blastjadwalhapus <id>`, `!blaststop`
 
 ### State
 
@@ -83,7 +84,7 @@ All in-memory with JSON persistence (`storage.js`): `chatHistory`, `userCooldown
 
 ### Blast scheduler
 
-- `startScheduler()` — runs every 30s, checks `scheduledBlasts` array for matching `HH:MM`
+- `startScheduler()` — runs every 30s, checks `scheduledBlasts` array for matching `HH:MM` **dan** `days` (kode hari `sen..min`; array kosong/`undefined` = tiap hari, backward compatible dengan jadwal lama). Guard `_lastFired` (in-memory, per-item) mencegah blast terkirim dobel kalau interval tick 2x dalam menit yang sama.
 - `executeBlast(msg, targetGroupIds?)` — sends message to groups (bisa filter), delay random 4-8 detik antar grup
 - `refreshGroups()` — fetches latest group list from WhatsApp
 - **Error resilience:** Retry otomatis 3x untuk `detached Frame` dan `Cannot read properties of null` errors. `_pageReportedDead` flag mencegah spam error ke console.

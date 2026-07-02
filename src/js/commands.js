@@ -84,7 +84,10 @@ client.on('message_create', async (message) => {
             '*Blast & Grup:*\n' +
             '!groups — Lihat daftar grup\n' +
             '!blast <pesan> — Kirim pesan ke SEMUA grup\n' +
-            '!blastjadwal <HH:MM> | <pesan> — Jadwalkan blast harian\n' +
+            '!blastjadwal [hari] <HH:MM> | <pesan> — Jadwalkan blast\n' +
+            '   Tanpa hari = setiap hari. Contoh: !blastjadwal jum 03:00 | pesan\n' +
+            '   Beberapa hari: !blastjadwal jum,sab 04:00 | pesan\n' +
+            '   Kode hari: sen, sel, rab, kam, jum, sab, min\n' +
             '!blastjadwallist — Lihat jadwal blast\n' +
             '!blastjadwalhapus <id> — Hapus jadwal blast\n' +
             '!blaststop — Hentikan semua jadwal blast'
@@ -447,18 +450,50 @@ client.on('message_create', async (message) => {
         const rest = args.slice(1).join(' ');
         const separatorIndex = rest.indexOf('|');
         if (separatorIndex === -1) {
-            return message.reply('⚠️ Format: !blastjadwal <HH:MM> | <pesan>\nContoh: !blastjadwal 08:00 | Selamat pagi!');
+            return message.reply(
+                '⚠️ Format: !blastjadwal [hari] <HH:MM> | <pesan>\n\n' +
+                'Contoh:\n' +
+                '!blastjadwal 08:00 | Selamat pagi! (setiap hari)\n' +
+                '!blastjadwal jum 03:00 | Subuh Jumat! (hari tertentu)\n' +
+                '!blastjadwal jum,sab 04:00 | pesan (beberapa hari)\n\n' +
+                'Kode hari: sen, sel, rab, kam, jum, sab, min'
+            );
         }
-        const waktuJadwal = rest.substring(0, separatorIndex).trim();
+        const beforePipe = rest.substring(0, separatorIndex).trim();
         const pesanJadwal = rest.substring(separatorIndex + 1).trim();
+        if (!pesanJadwal) return message.reply('⚠️ Pesan tidak boleh kosong.');
 
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        const DAY_CODES = ['sen', 'sel', 'rab', 'kam', 'jum', 'sab', 'min'];
+        const DAY_LABEL = { sen: 'Senin', sel: 'Selasa', rab: 'Rabu', kam: 'Kamis', jum: 'Jumat', sab: 'Sabtu', min: 'Minggu' };
+
+        const tokens = beforePipe.split(/\s+/);
+        let waktuJadwal;
+        let hariToken = null;
+        if (tokens.length >= 2 && timeRegex.test(tokens[1])) {
+            hariToken = tokens[0].toLowerCase();
+            waktuJadwal = tokens[1];
+        } else {
+            waktuJadwal = tokens[0];
+        }
+
         if (!timeRegex.test(waktuJadwal)) {
             return message.reply('⚠️ Format waktu salah. Gunakan HH:MM (contoh: 08:00, 17:30)');
         }
 
-        const newId = state.scheduledBlasts.length + 1;
-        state.scheduledBlasts.push({ id: newId, time: waktuJadwal, message: pesanJadwal, enabled: true });
+        let days = [];
+        if (hariToken) {
+            days = hariToken.split(',').map((d) => d.trim()).filter(Boolean);
+            const invalid = days.filter((d) => !DAY_CODES.includes(d));
+            if (invalid.length > 0) {
+                return message.reply(`⚠️ Kode hari tidak dikenal: ${invalid.join(', ')}\nGunakan: sen, sel, rab, kam, jum, sab, min (pisahkan koma untuk beberapa hari)`);
+            }
+        }
+
+        const newId = state.scheduledBlasts.length > 0
+            ? Math.max(...state.scheduledBlasts.map((j) => j.id)) + 1
+            : 1;
+        state.scheduledBlasts.push({ id: newId, time: waktuJadwal, days, message: pesanJadwal, enabled: true });
         state.saveData();
 
         if (!state.blastSchedulerId) scheduler.startScheduler();
@@ -470,12 +505,14 @@ client.on('message_create', async (message) => {
             });
         }
 
+        const hariLabel = days.length > 0 ? days.map((d) => DAY_LABEL[d]).join(', ') : 'setiap hari';
         return message.reply(
             `✅ *Jadwal blast ditambahkan!*\n\n` +
             `🆔 ID: ${newId}\n` +
+            `📅 Hari: ${hariLabel}\n` +
             `⏰ Waktu: ${waktuJadwal}\n` +
             `📨 Pesan: "${pesanJadwal.substring(0, 50)}${pesanJadwal.length > 50 ? '...' : ''}"\n\n` +
-            `Blast akan dikirim setiap hari jam ${waktuJadwal}.`
+            `Blast akan dikirim ${hariLabel === 'setiap hari' ? 'setiap hari' : `tiap ${hariLabel}`} jam ${waktuJadwal}.`
         );
     }
 
@@ -483,11 +520,13 @@ client.on('message_create', async (message) => {
         if (state.scheduledBlasts.length === 0) {
             return message.reply('📭 Belum ada jadwal blast.');
         }
+        const DAY_LABEL = { sen: 'Sen', sel: 'Sel', rab: 'Rab', kam: 'Kam', jum: 'Jum', sab: 'Sab', min: 'Min' };
         const list = state.scheduledBlasts
-            .map(
-                (j, i) =>
-                    `${i + 1}. 🆔 ${j.id} | ⏰ ${j.time} | ${j.enabled ? '✅ Aktif' : '🔴 Nonaktif'} | "${j.message.substring(0, 40)}..."`
-            )
+            .map((j, i) => {
+                const days = j.days || [];
+                const hariLabel = days.length > 0 ? days.map((d) => DAY_LABEL[d] || d).join(',') : 'Setiap hari';
+                return `${i + 1}. 🆔 ${j.id} | 📅 ${hariLabel} | ⏰ ${j.time} | ${j.enabled ? '✅ Aktif' : '🔴 Nonaktif'} | "${j.message.substring(0, 40)}..."`;
+            })
             .join('\n');
         return message.reply(`⏰ *Daftar Jadwal Blast:*\n\n${list}`);
     }

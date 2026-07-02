@@ -528,8 +528,20 @@
                     <div class="schedule-form">
                         <h3>Tambah Jadwal Baru</h3>
                         <div class="form-group">
-                            <label>Waktu (setiap hari)</label>
+                            <label>Waktu</label>
                             <input type="time" id="scheduleTime" value="08:00">
+                        </div>
+                        <div class="form-group">
+                            <label>Hari (kosongkan = setiap hari)</label>
+                            <div id="scheduleDays" style="display:flex;gap:8px;flex-wrap:wrap">
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="sen"> Sen</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="sel"> Sel</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="rab"> Rab</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="kam"> Kam</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="jum"> Jum</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="sab"> Sab</label>
+                                <label style="display:flex;align-items:center;gap:4px;font-weight:normal"><input type="checkbox" value="min"> Min</label>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Pesan Blast</label>

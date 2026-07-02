@@ -55,7 +55,7 @@ const processMessage = async (message, senderId, senderName, text) => {
 
         // Tetap cek handover di luar jam kerja
         const normalizedHour = utils.normalize(text || '');
-        if (state.botMenu && (normalizedHour === '8' || /^(hubungi\s*admin|admin|cs|mau\s*bicara\s*admin|ingin\s*hubungi\s*admin)$/i.test(normalizedHour))) {
+        if (state.botMenu && (normalizedHour === '8' || utils.isAdminRequest(text))) {
             const riwayat = (state.chatHistory[senderId] || [])
                 .filter((m) => m.role === 'user').slice(-3)
                 .map((m) => m.content).join(' | ');
@@ -87,7 +87,7 @@ const processMessage = async (message, senderId, senderName, text) => {
         const menuReply = handlers.handleMenu(normalizedText);
         if (menuReply) return message.reply(menuReply);
 
-        if (normalizedText === '8') {
+        if (normalizedText === '8' || utils.isAdminRequest(rawText)) {
             const riwayat = (state.chatHistory[senderId] || [])
                 .filter((m) => m.role === 'user').slice(-3)
                 .map((m) => m.content).join(' | ');

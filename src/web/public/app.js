@@ -847,10 +847,12 @@ function renderBlastHistory() {
 function addSchedule() {
     const time = document.getElementById('scheduleTime').value;
     const message = document.getElementById('scheduleMessage').value.trim();
+    const days = Array.from(document.querySelectorAll('#scheduleDays input:checked')).map(cb => cb.value);
     if (!time) { alert('Pilih waktu jadwal!'); return; }
     if (!message) { alert('Tulis pesan untuk jadwal!'); return; }
-    socket.emit('add-schedule', { time, message });
+    socket.emit('add-schedule', { time, message, days });
     document.getElementById('scheduleMessage').value = '';
+    document.querySelectorAll('#scheduleDays input:checked').forEach(cb => cb.checked = false);
 }
 
 socket.on('schedule-added', (data) => { renderSchedules(data.schedules); });
@@ -869,12 +871,15 @@ function renderSchedules(schedules) {
         container.innerHTML = '<div class="empty-state">Belum ada jadwal. Buat jadwal baru di atas.</div>';
         return;
     }
-    container.innerHTML = schedules.map(s =>
-        `<div class="schedule-item">
+    const DAY_LABEL = { sen: 'Sen', sel: 'Sel', rab: 'Rab', kam: 'Kam', jum: 'Jum', sab: 'Sab', min: 'Min' };
+    container.innerHTML = schedules.map(s => {
+        const days = s.days || [];
+        const hariLabel = days.length > 0 ? days.map(d => DAY_LABEL[d] || d).join(', ') : 'Setiap hari';
+        return `<div class="schedule-item">
             <div class="schedule-time">${s.time}</div>
             <div class="schedule-msg">
                 <span class="msg-text">${escapeHtml(s.message)}</span>
-                <span class="schedule-meta">${s.enabled ? 'Aktif' : 'Nonaktif'}</span>
+                <span class="schedule-meta">📅 ${hariLabel} · ${s.enabled ? 'Aktif' : 'Nonaktif'}</span>
             </div>
             <div class="schedule-actions">
                 <label class="toggle-switch">
@@ -883,8 +888,8 @@ function renderSchedules(schedules) {
                 </label>
                 <button class="btn-danger-sm" onclick="removeSchedule('${s.id}')">Hapus</button>
             </div>
-        </div>`
-    ).join('');
+        </div>`;
+    }).join('');
 
     const activeCount = schedules.filter(s => s.enabled).length;
     const el = document.getElementById('statSchedules');

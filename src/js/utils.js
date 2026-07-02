@@ -58,6 +58,11 @@ const isMentioned = (message) => {
 
 const cleanMention = (text) => text.replace(/@\d+/g, '').trim();
 
+// Frasa yang menandakan user ingin bicara dengan admin manusia.
+// Dipakai sama persis baik di dalam maupun di luar jam kerja supaya perilaku konsisten.
+const ADMIN_REQUEST_REGEX = /^(hubungi\s*admin|admin|cs|mau\s*bicara\s*admin|ingin\s*hubungi\s*admin)$/i;
+const isAdminRequest = (text) => ADMIN_REQUEST_REGEX.test(normalize(text || '').trim());
+
 module.exports = {
     getHistory,
     addHistory,
@@ -68,4 +73,5 @@ module.exports = {
     cleanMention,
     isBusinessHours,
     OUT_OF_HOURS_MSG,
+    isAdminRequest,
 };

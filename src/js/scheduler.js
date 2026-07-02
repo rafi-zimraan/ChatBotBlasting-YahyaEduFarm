@@ -3,6 +3,9 @@ const state = require('./state');
 
 let _pageReportedDead = false;
 
+// Index sesuai Date#getDay() (0 = Minggu)
+const DAY_CODE_BY_INDEX = ['min', 'sen', 'sel', 'rab', 'kam', 'jum', 'sab'];
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const isRetryableError = (err) => {
@@ -212,19 +215,33 @@ const executePersonalCampaign = async (campaign) => {
     if (state.io) state.io.emit('campaigns-update', state.personalCampaigns);
 };
 
+// Predikat murni (tanpa side effect) supaya bisa diuji langsung tanpa fake timer/interval.
+const scheduleMatchesTime = (jadwal, currentTime, currentDay) => {
+    if (!jadwal.enabled) return false;
+    if (jadwal.time !== currentTime) return false;
+    const days = jadwal.days || [];
+    if (days.length > 0 && !days.includes(currentDay)) return false;
+    return true;
+};
+
 const startScheduler = () => {
     if (state.blastSchedulerId) return;
     state.blastSchedulerId = setInterval(async () => {
         if (state.scheduledBlasts.length === 0) return;
         const now = new Date();
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const currentDay = DAY_CODE_BY_INDEX[now.getDay()];
+        const fireKey = `${now.toDateString()}_${currentTime}`;
 
         for (const jadwal of state.scheduledBlasts) {
-            if (!jadwal.enabled) continue;
-            if (jadwal.time === currentTime) {
-                console.log(`⏰ Jadwal blast terpicu: ${jadwal.time} — "${jadwal.message.substring(0, 40)}..."`);
-                await executeBlast(jadwal.message);
-            }
+            if (!scheduleMatchesTime(jadwal, currentTime, currentDay)) continue;
+            if (jadwal._lastFired === fireKey) continue; // cegah kirim dobel di menit yang sama
+            jadwal._lastFired = fireKey;
+
+            const days = jadwal.days || [];
+            const hariLabel = days.length > 0 ? days.join(',') : 'setiap hari';
+            console.log(`⏰ Jadwal blast terpicu: ${jadwal.time} (${hariLabel}) — "${jadwal.message.substring(0, 40)}..."`);
+            await executeBlast(jadwal.message);
         }
 
         for (const campaign of (state.personalCampaigns || [])) {
@@ -250,4 +267,6 @@ module.exports = {
     executePersonalCampaign,
     startScheduler,
     stopScheduler,
+    DAY_CODE_BY_INDEX,
+    scheduleMatchesTime,
 };
