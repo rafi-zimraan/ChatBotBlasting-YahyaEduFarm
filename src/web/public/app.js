@@ -1273,6 +1273,7 @@ function updateWaBadge(status) {
         text.textContent = 'WhatsApp Offline';
         btn.title = 'WhatsApp tidak terhubung';
         waConnected = false;
+        showWaOfflineAlert();
     }
 }
 

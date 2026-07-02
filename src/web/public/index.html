@@ -1049,6 +1049,34 @@
         </div>
     </div>
 
+    <!-- WA OFFLINE ALERT OVERLAY -->
+    <div id="waOfflineOverlay" class="wa-offline-overlay" style="display:none">
+        <div class="wa-offline-box">
+            <div class="wa-offline-icon">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    <line x1="1" y1="1" x2="23" y2="23" stroke="#ef4444" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="wa-offline-title">WhatsApp Terputus</div>
+            <div class="wa-offline-desc">
+                Nomor WhatsApp yang terhubung ke platform ini sedang offline / tidak memiliki koneksi internet.
+                <br><br>
+                <strong>Akibatnya:</strong>
+                <ul style="text-align:left;display:inline-block;margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.8">
+                    <li>Blasting ke grup <strong>tidak bisa</strong> dikirim</li>
+                    <li>Pesan personal / campaign <strong>tidak bisa</strong> dikirim</li>
+                    <li>Bot <strong>tidak bisa</strong> membalas customer</li>
+                </ul>
+                <br><br>
+                Solusi: hidupkan HP, sambungkan ke internet, buka WhatsApp, dan tunggu beberapa saat hingga bot reconnect otomatis.
+            </div>
+            <button class="btn btn-primary" onclick="closeWaOfflineAlert()" style="margin-top:16px;padding:8px 28px;font-size:14px">
+                Saya mengerti
+            </button>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
