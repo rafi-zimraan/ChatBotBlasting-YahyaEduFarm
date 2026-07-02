@@ -468,6 +468,7 @@ function getPeriodRange(period) {
     }
     if (period === 'month') return { start: `${y}-${m}-01`, end: today };
     if (period === 'year') return { start: `${y}-01-01`, end: today };
+    return { start: today, end: today };
 }
 
 function getPeriodLabel(period) {
@@ -500,6 +501,7 @@ function getPreviousPeriodRange(period) {
         return { start: `${py}-${pm}-01`, end: today };
     }
     if (period === 'year') return { start: `${y - 1}-01-01`, end: `${y - 1}-12-31` };
+    return { start: today, end: today };
 }
 
 function isDateInRange(dateStr, start, end) {
@@ -507,7 +509,16 @@ function isDateInRange(dateStr, start, end) {
 }
 
 function computePeriodSum(period, field) {
-    const { start, end } = getPeriodRange(period);
+    let start, end;
+    if (typeof period === 'object' && period.start && period.end) {
+        start = period.start;
+        end = period.end;
+    } else {
+        const range = getPeriodRange(period);
+        if (!range) return 0;
+        start = range.start;
+        end = range.end;
+    }
     if (field === 'private') {
         let total = 0;
         const d = new Date(start);
@@ -2014,10 +2025,13 @@ function scrollChatToBottom() {
 function sendCsReply() {
     const input = document.getElementById('mcReplyInput');
     const msg = (input?.value || '').trim();
-    if (!msg || !selectedConvId) return;
+    if (!msg) { showToast('Pesan kosong', 'Ketik pesan dulu ya', '✏️'); return; }
+    if (!selectedConvId) { showToast('Pilih kontak', 'Pilih percakapan dulu', '👤'); return; }
     const btn = document.getElementById('mcSendBtn');
     if (btn) btn.disabled = true;
     socket.emit('send-cs-reply', { userId: selectedConvId, message: msg });
+    // Auto-recover: aktifkan button lagi setelah 15 detik jika ga ada respon
+    setTimeout(() => { const b = document.getElementById('mcSendBtn'); if (b) b.disabled = false; }, 15000);
 }
 
 function blockCurrentContact() {
