@@ -27,5 +27,8 @@ data/
 .vscode/
 *.swp
 
+# Test coverage
+coverage/
+
 # Old root entry (moved to src/js/)
 /index.js
